@@ -27,7 +27,7 @@ export function correctAnswerOf(exercise: Exercise): string {
     case 'reading':
       return exercise.options[exercise.correctIndex] ?? '';
     case 'matching':
-      return exercise.pairs.map((pair) => `${pair.english} = ${pair.portuguese}`).join('; ');
+      return exercise.pairs.map((pair) => `${pair.term} = ${pair.translation}`).join('; ');
     case 'translation':
     case 'sentence':
     case 'fill-blank':
@@ -42,8 +42,8 @@ export type SubmittedAnswer = string | Array<[string, string]>;
 export function isExerciseCorrect(exercise: Exercise, answer: SubmittedAnswer): boolean {
   if (exercise.type === 'matching') {
     if (!Array.isArray(answer) || answer.length !== exercise.pairs.length) return false;
-    const expected = new Map(exercise.pairs.map((pair) => [pair.english, pair.portuguese]));
-    return answer.every(([english, portuguese]) => expected.get(english) === portuguese);
+    const expected = new Map(exercise.pairs.map((pair) => [pair.term, pair.translation]));
+    return answer.every(([term, translation]) => expected.get(term) === translation);
   }
   if (Array.isArray(answer) || typeof answer !== 'string') return false;
 

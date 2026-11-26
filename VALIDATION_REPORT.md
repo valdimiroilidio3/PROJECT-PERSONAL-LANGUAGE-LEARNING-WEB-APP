@@ -50,3 +50,25 @@ Evidência: `validation/lesson-summary.png`, `validation/browser-validation.log`
 ## Observação
 
 - O cartão da lição `greetings` indica `20 XP` como recompensa máxima, mas a regra atual de XP atribui 25 XP numa execução perfeita. Não alterei a regra de pontuação sem aprovação, para não mudar critérios de avaliação já existentes.
+
+---
+
+# Expansão multilingual — 26 nov 2026 (segunda validação)
+
+## Pacotes adicionados
+
+O catálogo passou a ter oito percursos independentes: inglês (16 lições), espanhol (3), holandês (2), francês (2), alemão (2), italiano (2), JavaScript (2) e Python (2) — 31 lições e 15 cenários de prática. Cada pacote tem vocabulário, exercícios validados, diagnóstico retirado do conteúdo real e um cenário de tutor offline. Os percursos de código usam `L1/L2/L3` e não mostram controlos de áudio nem rótulos CEFR inventados.
+
+## Browser real (Chromium 158)
+
+- Configuração inicial: as oito opções apareceram; escolhi espanhol, percorri as 4 etapas e o mini-diagnóstico gerado a partir das perguntas reais da lição `es-saludos`; o plano final abriu `/learn` com “Aprender espanhol”.
+- Lição `es-saludos`: concluída com 100% de acerto e 25 XP; resumo e `/progress` mostraram a lição guardada após recarregamento. Evidência: `validation/spanish-summary.png`.
+- Troca para holandês: `/learn` mostrou “0 de 2 lições”, confirmando que o progresso de espanhol não contamina o novo percurso. Evidência: `validation/dutch-learn.png`.
+- Troca para JavaScript: rótulos “Iniciação”, nenhum botão de áudio enganoso, campo com placeholder “Escreve o código…”. A lição `js-variaveis` foi concluída com acerto, incluindo exercício de código. Evidência: `validation/javascript-summary.png`.
+- Regresso a espanhol: a lição concluída e as estatísticas continuavam presentes.
+- Mobile 390×844: seletor de língua visível na barra superior, sem overflow horizontal; troca para Python atualizou a página e mostrou as duas lições do percurso. Evidência: `validation/mobile-python.png`.
+- Nenhum erro de consola ou de página foi registado.
+
+## Automações
+
+`npm run typecheck`, `npm run lint`, `npm test` e `npm run build` terminaram com código 0. A suíte ficou com 13 ficheiros e 40 testes, incluindo isolamento de progresso entre inglês, espanhol e JavaScript e validação do catálogo completo.

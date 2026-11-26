@@ -18,6 +18,11 @@ describe('backup validation', () => {
     expect(parseSnapshot(JSON.stringify(snapshot)).profile.level).toBe('beginner');
   });
 
+  it('accepts another target language', () => {
+    const snapshot = createSnapshot({ profile: { ...profile, targetLanguage: 'es' }, completions: [], attempts: [], vocabulary: [], sessions: [] });
+    expect(parseSnapshot(JSON.stringify(snapshot)).profile.targetLanguage).toBe('es');
+  });
+
   it('rejects unknown formats and broken records before import', () => {
     expect(() => parseSnapshot('{not json')).toThrow(/JSON/);
     expect(() => parseSnapshot(JSON.stringify({ version: 2 }))).toThrow(/Formato/);
@@ -25,5 +30,6 @@ describe('backup validation', () => {
     expect(() => parseSnapshot(JSON.stringify({ ...snapshot, vocabulary: [{ id: 'x' }] }))).toThrow(/vocabulário/);
     expect(() => parseSnapshot(JSON.stringify({ ...snapshot, profile: { ...profile, level: 'wizard' } }))).toThrow(/preferências/);
     expect(() => parseSnapshot(JSON.stringify({ ...snapshot, profile: { ...profile, supportLocale: 'pt-XX' } }))).toThrow(/preferências/);
+    expect(() => parseSnapshot(JSON.stringify({ ...snapshot, profile: { ...profile, targetLanguage: 'klingon' } }))).toThrow(/preferências/);
   });
 });

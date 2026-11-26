@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Bot, Check, MessageCircle, Plus, Send, Sparkles } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { Mascot } from '@/components/Mascot';
 import { SpeakControl, SpeechInput } from '@/components/Speech';
 import { PageHeader, Tag } from '@/components/ui';
-import { scenarios } from '@/lib/content/scenarios';
+import { scenariosFor } from '@/lib/content';
+import { levelLabel } from '@/lib/languages';
 import { offlineReply, type Personality, type TutorMode, type TutorReply } from '@/lib/tutor/offline';
 import type { SupportLocale } from '@/lib/tutor/validation';
-import type { LearnerLevel, TutorMessage, TutorSession } from '@/lib/types';
+import type { LearnerLevel, PracticeScenario, TutorMessage, TutorSession } from '@/lib/types';
 
 const personalities: { id: Personality; label: string; description: string }[] = [
   { id: 'friendly', label: 'Amigável', description: 'Leve e incentivador' },
@@ -35,8 +36,9 @@ function summarize(messages: TutorMessage[], scenarioTitle: string): string {
 }
 
 export default function TutorPage() {
-  const { profile, sessions, saveSession, recordAttempt, updateProfile } = useApp();
-  const [scenarioId, setScenarioId] = useState('introduce-yourself');
+  const { profile, language, sessions, saveSession, recordAttempt, updateProfile } = useApp();
+  const scenarios = useMemo(() => scenariosFor(profile.targetLanguage), [profile.targetLanguage]);
+  const [scenarioId, setScenarioId] = useState('');
   const [personality, setPersonality] = useState<Personality>('friendly');
   const [difficulty, setDifficulty] = useState<LearnerLevel>(profile.level);
   const [supportLocale, setSupportLocale] = useState<SupportLocale>(profile.supportLocale ?? 'pt-PT');
@@ -51,6 +53,13 @@ export default function TutorPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scenario = scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
+
+  useEffect(() => {
+    setMessages([]);
+    setActiveId(null);
+    setError(null);
+    setScenarioId(scenarios[0]?.id ?? '');
+  }, [profile.targetLanguage, scenarios]);
 
   useEffect(() => {
     void fetch('/api/tutor')
@@ -83,6 +92,7 @@ export default function TutorPage() {
     let reply: TutorReply;
     if (chosenMode === 'offline') {
       reply = offlineReply({
+        languageId: profile.targetLanguage,
         scenarioId,
         personality,
         difficulty,
@@ -96,6 +106,7 @@ export default function TutorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: chosenMode,
+          languageId: profile.targetLanguage,
           scenarioId,
           personality,
           difficulty,
@@ -205,7 +216,7 @@ export default function TutorPage() {
     <div>
       <PageHeader
         eyebrow="Conversação guiada"
-        title="Tutor de inglês"
+        title={`Tutor de ${language.label.toLowerCase()}`}
         description="Conversa sobre situações reais, recebe sugestões e vê correções em português. Funciona sem API; podes ativar um modelo local se quiseres."
         action={<button type="button" onClick={startNew} className="btn-primary"><Plus size={16} /> Nova conversa</button>}
       />
@@ -229,10 +240,10 @@ export default function TutorPage() {
         <aside className="space-y-4">
           <details className="card lg:hidden" open={sessions.length === 0}>
             <summary className="cursor-pointer text-sm font-black">Definições e histórico</summary>
-            <div className="mt-4"><SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} /></div>
+            <div className="mt-4"><SetupPanel {...{ scenarios, scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} /></div>
           </details>
           <div className="hidden space-y-4 lg:block">
-            <SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} />
+            <SetupPanel {...{ scenarios, scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} />
           </div>
         </aside>
 
@@ -326,6 +337,7 @@ export default function TutorPage() {
 }
 
 interface SetupProps {
+  scenarios: PracticeScenario[];
   scenarioId: string;
   setScenarioId: (value: string) => void;
   personality: Personality;
@@ -343,7 +355,7 @@ interface SetupProps {
   setShowSetup: (value: boolean) => void;
 }
 
-function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }: SetupProps) {
+function SetupPanel({ scenarios, scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }: SetupProps) {
   return (
     <>
       {showSetup && (
@@ -351,7 +363,7 @@ function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, di
           <div>
             <p className="label">Situação</p>
             <select className="input" value={scenarioId} onChange={(event) => setScenarioId(event.target.value)} aria-label="Situação do tutor">
-              {scenarios.map((item) => <option key={item.id} value={item.id}>{item.title} · {item.cefr}</option>)}
+              {scenarios.map((item) => <option key={item.id} value={item.id}>{item.title} · {levelLabel(item.languageId, item.level)}</option>)}
             </select>
           </div>
           <div className="mt-4">

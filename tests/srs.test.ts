@@ -4,8 +4,8 @@ import type { VocabularyItem } from '../lib/types';
 
 const item = (overrides: Partial<VocabularyItem> = {}): VocabularyItem => ({
   id: 'hello',
-  english: 'hello',
-  portuguese: 'olá',
+  term: 'hello',
+  translation: 'olá',
   example: 'Hello!',
   context: 'Saudação',
   familiarity: 0,

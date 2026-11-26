@@ -1,5 +1,6 @@
-import { getScenario } from '@/lib/content/scenarios';
-import type { LearnerLevel } from '@/lib/types';
+import { getScenario } from '@/lib/content';
+import { isLanguageId } from '@/lib/languages';
+import type { LanguageId, LearnerLevel } from '@/lib/types';
 import type { Personality, TutorMode } from './offline';
 
 export const TUTOR_LIMITS = {
@@ -13,6 +14,7 @@ export type SupportLocale = 'pt-PT' | 'pt-BR';
 
 export interface ValidTutorRequest {
   mode: Exclude<TutorMode, 'offline'>;
+  languageId: LanguageId;
   scenarioId: string;
   personality: Personality;
   difficulty: LearnerLevel;
@@ -38,7 +40,8 @@ export function validateTutorRequest(raw: unknown, bodyChars: number): Validatio
     return { ok: false, status: 413, error: 'O pedido é demasiado grande. Envie mensagens mais curtas.' };
   }
   if (!oneOf(body.mode, modes)) return { ok: false, status: 400, error: 'Modo de tutor desconhecido.' };
-  if (typeof body.scenarioId !== 'string' || !getScenario(body.scenarioId)) {
+  const languageId = isLanguageId(body.languageId) ? body.languageId : 'en';
+  if (typeof body.scenarioId !== 'string' || !getScenario(body.scenarioId, languageId)) {
     return { ok: false, status: 400, error: 'Cenário desconhecido.' };
   }
   if (!oneOf(body.personality, personalities)) return { ok: false, status: 400, error: 'Personalidade inválida.' };
@@ -71,6 +74,7 @@ export function validateTutorRequest(raw: unknown, bodyChars: number): Validatio
     ok: true,
     value: {
       mode: body.mode,
+      languageId,
       scenarioId: body.scenarioId,
       personality: body.personality,
       difficulty: body.difficulty,

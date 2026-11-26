@@ -18,17 +18,18 @@ import { useApp } from '@/components/AppContext';
 import { EmptyState, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
 import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/lib/analytics';
 import { getNextStep } from '@/lib/recommendations';
-import { lessons } from '@/lib/content';
-import { scenarios } from '@/lib/content/scenarios';
+import { lessonsFor, scenariosFor } from '@/lib/content';
 import { isOverdue } from '@/lib/srs';
 
 export default function DashboardPage() {
-  const { profile, completions, attempts, vocabulary } = useApp();
+  const { profile, language, completions, attempts, vocabulary } = useApp();
+  const lessons = useMemo(() => lessonsFor(profile.targetLanguage), [profile.targetLanguage]);
+  const scenarios = useMemo(() => scenariosFor(profile.targetLanguage), [profile.targetLanguage]);
   const analytics = useMemo(() => deriveAnalytics(completions, attempts, vocabulary), [completions, attempts, vocabulary]);
-  const recommended = useMemo(() => recommendLesson(profile, lessons, completions), [profile, completions]);
+  const recommended = useMemo(() => recommendLesson(profile, lessons, completions), [profile, completions, lessons]);
   const nextStep = useMemo(
     () => getNextStep({ analytics, profile, lessons, completions, attempts, vocabulary }),
-    [analytics, profile, completions, attempts, vocabulary],
+    [analytics, profile, completions, attempts, vocabulary, lessons],
   );
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
@@ -61,7 +62,7 @@ export default function DashboardPage() {
           <div className="min-w-[240px] flex-1">
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-sun">{greeting}!</p>
             <h1 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-              O teu inglês cresce<br />um dia de cada vez.
+              O teu {language.label.toLowerCase()} cresce<br />um dia de cada vez.
             </h1>
             <p className="mt-3 max-w-md text-sm text-white/70">
               Meta de hoje: <strong className="text-white">{analytics.todayXp} / {xpGoal} XP</strong> · {profile.dailyGoalMinutes} minutos de estudo
@@ -121,7 +122,7 @@ export default function DashboardPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-extrabold">{lesson.title}</p>
-                    <p className="mt-0.5 text-xs text-muted">{lesson.cefr} · {lesson.minutes} min · {lesson.exercises.length} exercícios</p>
+                    <p className="mt-0.5 text-xs text-muted">{lesson.level} · {lesson.minutes} min · {lesson.exercises.length} exercícios</p>
                   </div>
                   {done && <Tag tone="green">Concluída</Tag>}
                 </Link>

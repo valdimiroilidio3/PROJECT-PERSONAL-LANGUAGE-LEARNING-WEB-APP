@@ -6,12 +6,13 @@ import { LessonPlayer } from '@/components/LessonPlayer';
 import { useApp } from '@/components/AppContext';
 import { EmptyState } from '@/components/ui';
 import { isLessonUnlocked } from '@/lib/analytics';
-import { getLesson, lessons } from '@/lib/content';
+import { getLesson, lessonsFor } from '@/lib/content';
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>();
-  const { ready, completions } = useApp();
-  const lesson = getLesson(params.id);
+  const { ready, profile, completions } = useApp();
+  const lessons = lessonsFor(profile.targetLanguage);
+  const lesson = getLesson(params.id, profile.targetLanguage);
 
   if (!lesson) {
     return (

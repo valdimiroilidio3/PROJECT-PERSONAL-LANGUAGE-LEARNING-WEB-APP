@@ -32,7 +32,7 @@ const attempt = (overrides: Partial<Attempt> = {}): Attempt => ({
 
 function input(attempts: Attempt[], words = 0, now = new Date('2026-01-10T12:00:00.000Z')) {
   const vocabulary = Array.from({ length: words }, (_, index) =>
-    createVocabularyItem({ english: `word-${index}`, portuguese: 'palavra', example: '', context: '' }, { source: 'manual', now: new Date('2026-01-01T00:00:00.000Z') }),
+    createVocabularyItem({ term: `word-${index}`, translation: 'palavra', example: '', context: '' }, { source: 'manual', now: new Date('2026-01-01T00:00:00.000Z') }),
   );
   return {
     analytics: deriveAnalytics([], attempts, vocabulary, now),

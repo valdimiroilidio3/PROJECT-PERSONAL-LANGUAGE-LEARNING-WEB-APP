@@ -38,9 +38,11 @@ export function speechRecognitionSupported(): boolean {
   return recognitionConstructor() !== undefined;
 }
 
-export function englishVoices(): SpeechSynthesisVoice[] {
+export function voicesFor(locale: string): SpeechSynthesisVoice[] {
   if (!speechSynthesisSupported()) return [];
-  return window.speechSynthesis.getVoices().filter((voice) => voice.lang.toLowerCase().startsWith('en'));
+  const prefix = locale.split('-')[0].toLowerCase();
+  const voices = window.speechSynthesis.getVoices();
+  return voices.filter((voice) => voice.lang.toLowerCase().startsWith(prefix));
 }
 
 export function speak(text: string, options: { rate?: number; lang?: string } = {}): Promise<void> {
@@ -53,7 +55,8 @@ export function speak(text: string, options: { rate?: number; lang?: string } = 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = options.lang ?? 'en-US';
     utterance.rate = options.rate ?? 1;
-    const voice = englishVoices().find((item) => item.lang === utterance.lang);
+    const voices = voicesFor(utterance.lang);
+    const voice = voices.find((item) => item.lang === utterance.lang) ?? voices[0];
     if (voice) utterance.voice = voice;
     utterance.onend = () => resolve();
     utterance.onerror = () => resolve();
@@ -69,11 +72,11 @@ export interface RecognitionHandlers {
   onEnd?: () => void;
 }
 
-export function startRecognition(handlers: RecognitionHandlers): (() => void) | null {
+export function startRecognition(handlers: RecognitionHandlers, locale = 'en-US'): (() => void) | null {
   const Constructor = recognitionConstructor();
   if (!Constructor) return null;
   const recognition = new Constructor();
-  recognition.lang = 'en-US';
+  recognition.lang = locale;
   recognition.continuous = false;
   recognition.interimResults = true;
   recognition.onresult = (event) => {

@@ -1,4 +1,4 @@
-# Lumo English — Design System
+# Lumio — Design System
 
 Este documento descreve o sistema visual **já implementado** no projeto. Os tokens vivem em `tailwind.config.ts`, os componentes base em `app/globals.css` e os componentes partilhados em `components/ui.tsx`. Não existe um segundo sistema de estilos.
 

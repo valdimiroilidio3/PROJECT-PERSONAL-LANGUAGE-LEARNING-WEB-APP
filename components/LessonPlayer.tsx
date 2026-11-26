@@ -8,6 +8,7 @@ import { useApp } from './AppContext';
 import { Mascot } from './Mascot';
 import { SpeakControl } from './Speech';
 import { ProgressBar, Tag } from './ui';
+import { levelLabel } from '@/lib/languages';
 import { correctAnswerOf, isExerciseCorrect, accuracyPercent, type SubmittedAnswer } from '@/lib/scoring';
 import type { Exercise, Lesson, LessonMistake } from '@/lib/types';
 
@@ -28,7 +29,7 @@ interface Summary {
 
 function answerLabel(answer: SubmittedAnswer): string {
   if (typeof answer === 'string') return answer;
-  return answer.map(([english, portuguese]) => `${english} = ${portuguese}`).join('; ');
+  return answer.map(([term, translation]) => `${term} = ${translation}`).join('; ');
 }
 
 /** Uses the lesson's own vocabulary examples; never invents content. */
@@ -36,14 +37,14 @@ function additionalExample(lesson: Lesson, exercise: Exercise | undefined): stri
   if (!exercise) return null;
   const target = correctAnswerOf(exercise).toLowerCase();
   const seed = lesson.vocabulary.find((item) => {
-    const english = item.english.toLowerCase();
-    return target === english || target.includes(english) || item.example.toLowerCase().includes(target);
+    const word = item.term.toLowerCase();
+    return target === word || target.includes(word) || item.example.toLowerCase().includes(target);
   });
   return seed?.example || null;
 }
 
 export function LessonPlayer({ lesson }: { lesson: Lesson }) {
-  const { recordAttempt, completeLesson } = useApp();
+  const { language, recordAttempt, completeLesson } = useApp();
   const [phase, setPhase] = useState<'intro' | 'playing' | 'summary'>('intro');
   const [index, setIndex] = useState(0);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -160,7 +161,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         <div className="card">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <Tag tone="sun">{lesson.cefr} · {lesson.category}</Tag>
+              <Tag tone="sun">{levelLabel(lesson.languageId, lesson.level)} · {lesson.category}</Tag>
               <h1 className="mt-3 text-3xl font-black tracking-tight">{lesson.title}</h1>
               <p className="mt-1 text-sm text-muted">{lesson.subtitle}</p>
             </div>
@@ -178,12 +179,12 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
           <h2 className="mt-7 text-sm font-black">Vocabulário desta lição</h2>
           <div className="mt-3 divide-y divide-line rounded-3xl border border-line">
             {lesson.vocabulary.map((item) => (
-              <div key={item.english} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div key={item.term} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
-                  <p className="font-bold">{item.english} <span className="font-normal text-muted">— {item.portuguese}</span></p>
+                  <p className="font-bold">{item.term} <span className="font-normal text-muted">— {item.translation}</span></p>
                   <p className="mt-0.5 truncate text-xs text-muted">{item.example || item.context}</p>
                 </div>
-                <SpeakControl text={item.english || item.example} compact />
+                {language.speech && <SpeakControl text={item.term || item.example} compact />}
               </div>
             ))}
           </div>
@@ -262,7 +263,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       <motion.div key={exercise.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card">
         <h1 className="text-xl font-black leading-snug">{exercise.prompt}</h1>
 
-        {exercise.type === 'listening' && (
+        {exercise.type === 'listening' && language.speech && (
           <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-cream p-4">
             <SpeakControl text={exercise.audioText} />
             <span className="text-xs text-muted">Ouve quantas vezes quiseres. A velocidade lenta está disponível.</span>
@@ -311,25 +312,25 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         {exercise.type === 'matching' && (
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div>
-              <p className="label">Inglês</p>
+              <p className="label">{language.termLabel}</p>
               {exercise.pairs.map((pair) => {
-                const matched = matches[pair.english];
+                const matched = matches[pair.term];
                 return (
-                  <button key={pair.english} type="button" disabled={!!feedback || !!matched} onClick={() => setSelectedEnglish(pair.english)} className={`mb-2 w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${selectedEnglish === pair.english ? 'border-ink bg-sun-soft' : matched ? 'border-success bg-success-soft' : 'border-line bg-white hover:border-ink/30'}`}>
-                    {pair.english}
+                  <button key={pair.term} type="button" disabled={!!feedback || !!matched} onClick={() => setSelectedEnglish(pair.term)} className={`mb-2 w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${selectedEnglish === pair.term ? 'border-ink bg-sun-soft' : matched ? 'border-success bg-success-soft' : 'border-line bg-white hover:border-ink/30'}`}>
+                    {pair.term}
                   </button>
                 );
               })}
             </div>
             <div>
-              <p className="label">Português</p>
+              <p className="label">{language.translationLabel}</p>
               {shuffledTranslations.map((pair) => (
-                <button key={pair.english} type="button" disabled={!!feedback} onClick={() => {
+                <button key={pair.term} type="button" disabled={!!feedback} onClick={() => {
                   if (!selectedEnglish) return;
-                  setMatches((previous) => ({ ...previous, [selectedEnglish]: pair.portuguese }));
+                  setMatches((previous) => ({ ...previous, [selectedEnglish]: pair.translation }));
                   setSelectedEnglish(null);
                 }} className="mb-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-left text-sm font-bold transition hover:border-ink/30">
-                  {pair.portuguese}
+                  {pair.translation}
                 </button>
               ))}
             </div>
@@ -366,7 +367,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         {(exercise.type === 'translation' || exercise.type === 'sentence' || exercise.type === 'fill-blank') && (
           <form className="mt-5" onSubmit={(event) => { event.preventDefault(); if (text.trim()) submit(text.trim()); }}>
             <label className="label" htmlFor="answer">A tua resposta</label>
-            <input id="answer" ref={inputRef} value={text} onChange={(event) => setText(event.target.value)} disabled={!!feedback} className="input" placeholder="Escreve em inglês…" autoComplete="off" />
+            <input id="answer" ref={inputRef} value={text} onChange={(event) => setText(event.target.value)} disabled={!!feedback} className="input" placeholder={language.kind === 'programming' ? 'Escreve o código…' : `Escreve em ${language.label.toLowerCase()}…`} autoComplete="off" />
             {!feedback && <button type="submit" className="btn-primary mt-4 w-full" disabled={!text.trim()}>Verificar resposta</button>}
           </form>
         )}
@@ -394,7 +395,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
                 <span className="text-muted">“{additionalExample(lesson, exercise)}”</span>
               </p>
             )}
-            {exercise.type === 'listening' && (
+            {exercise.type === 'listening' && language.speech && (
               <p className="mt-2 text-xs text-muted"><span className="font-bold">Transcrição:</span> {exercise.audioText}</p>
             )}
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">

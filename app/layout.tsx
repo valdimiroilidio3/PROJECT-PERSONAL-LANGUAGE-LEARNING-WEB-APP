@@ -4,8 +4,8 @@ import { AppProvider } from '@/components/AppContext';
 import { AppShell } from '@/components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Lumio — Aprende inglês todos os dias',
-  description: 'Um espaço pessoal para aprender inglês com lições, vocabulário, conversação e revisão espaçada.',
+  title: 'Lumio — Aprende todos os dias',
+  description: 'Um espaço pessoal para aprender línguas e programação com lições, vocabulário, conversação e revisão espaçada.',
 };
 
 export const viewport: Viewport = {

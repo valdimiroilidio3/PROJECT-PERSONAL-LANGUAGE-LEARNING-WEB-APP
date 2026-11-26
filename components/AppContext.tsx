@@ -14,6 +14,7 @@ import {
   writeKv,
   type StorageMode,
 } from '@/lib/db';
+import { getLanguage } from '@/lib/languages';
 import { calculateLessonXp } from '@/lib/scoring';
 import { vocabularyFromLesson } from '@/lib/vocabulary';
 import type {
@@ -70,7 +71,15 @@ interface AppActions {
   dismissError: () => void;
 }
 
-type AppContextValue = AppState & AppActions;
+interface AppContextExtras {
+  language: ReturnType<typeof getLanguage>;
+  allCompletions: LessonCompletion[];
+  allAttempts: Attempt[];
+  allVocabulary: VocabularyItem[];
+  allSessions: TutorSession[];
+}
+
+type AppContextValue = AppState & AppActions & AppContextExtras;
 
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -93,16 +102,18 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string | number): T[] {
 
 /** Imported backups may contain repeated ids; normalise before replacing local data. */
 function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
-  const attempts = snapshot.attempts.map((attempt, index) => ({
+  const withLanguage = <T extends { languageId?: string }>(items: T[]): T[] =>
+    items.map((item) => ({ ...item, languageId: item.languageId ?? 'en' }));
+  const attempts = withLanguage(snapshot.attempts).map((attempt, index) => ({
     ...attempt,
     id: typeof attempt.id === 'number' && Number.isFinite(attempt.id) ? attempt.id : index + 1,
-  }));
+  })) as Attempt[];
   return {
     ...snapshot,
-    completions: uniqueBy(snapshot.completions, (item) => item.lessonId),
+    completions: uniqueBy(withLanguage(snapshot.completions), (item) => item.lessonId),
     attempts: uniqueBy(attempts, (item) => item.id as number),
-    vocabulary: uniqueBy(snapshot.vocabulary, (item) => item.id),
-    sessions: uniqueBy(snapshot.sessions, (item) => item.id),
+    vocabulary: uniqueBy(withLanguage(snapshot.vocabulary), (item) => item.id),
+    sessions: uniqueBy(withLanguage(snapshot.sessions), (item) => item.id),
   };
 }
 
@@ -124,13 +135,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           getAll<TutorSession>('sessions'),
         ]);
         if (!active) return;
+        const withLanguage = <T extends { languageId?: string }>(items: T[]): T[] =>
+          items.map((item) => ({ ...item, languageId: item.languageId ?? 'en' }));
         setState({
           ready: true,
           profile: profile ?? defaultProfile,
-          completions,
-          attempts: attempts.sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
-          vocabulary,
-          sessions,
+          completions: withLanguage(completions),
+          attempts: withLanguage(attempts).sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
+          vocabulary: withLanguage(vocabulary),
+          sessions: withLanguage(sessions),
           storageMode: mode,
           error: mode === 'memory' ? 'O armazenamento local não está disponível. O progresso durará apenas esta sessão.' : null,
         });
@@ -182,6 +195,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (input: Omit<Attempt, 'id' | 'timestamp'>) => {
       attemptSequence.current += 1;
       const attempt: Attempt = {
+        languageId: state.profile.targetLanguage,
         ...input,
         id: Date.now() * 1000 + (attemptSequence.current % 1000),
         timestamp: new Date().toISOString(),
@@ -189,7 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await persist(() => putRecord('attempts', attempt));
       setState((previous) => ({ ...previous, attempts: [...previous.attempts, attempt] }));
     },
-    [persist],
+    [persist, state.profile.targetLanguage],
   );
 
   const completeLesson = useCallback(
@@ -202,6 +216,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         const xpAwarded = calculateLessonXp({ totalExercises, correctCount, firstCompletion: true });
         const completion: LessonCompletion = {
+          languageId: lesson.languageId,
           lessonId: lesson.id,
           completedAt: new Date().toISOString(),
           correctCount,
@@ -236,15 +251,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addVocabulary = useCallback(
     async (item: VocabularyItem) => {
-      await persist(() => putRecord('vocabulary', item));
+      const record = { ...item, languageId: item.languageId ?? state.profile.targetLanguage };
+      await persist(() => putRecord('vocabulary', record));
       setState((previous) => ({
         ...previous,
-        vocabulary: previous.vocabulary.some((existing) => existing.id === item.id)
-          ? previous.vocabulary.map((existing) => (existing.id === item.id ? item : existing))
-          : [...previous.vocabulary, item],
+        vocabulary: previous.vocabulary.some((existing) => existing.id === record.id)
+          ? previous.vocabulary.map((existing) => (existing.id === record.id ? record : existing))
+          : [...previous.vocabulary, record],
       }));
     },
-    [persist],
+    [persist, state.profile.targetLanguage],
   );
 
   const updateVocabulary = useCallback(
@@ -268,15 +284,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const saveSession = useCallback(
     async (session: TutorSession) => {
-      await persist(() => putRecord('sessions', session));
+      const record = { ...session, languageId: session.languageId ?? state.profile.targetLanguage };
+      await persist(() => putRecord('sessions', record));
       setState((previous) => ({
         ...previous,
-        sessions: previous.sessions.some((existing) => existing.id === session.id)
-          ? previous.sessions.map((existing) => (existing.id === session.id ? session : existing))
-          : [session, ...previous.sessions],
+        sessions: previous.sessions.some((existing) => existing.id === record.id)
+          ? previous.sessions.map((existing) => (existing.id === record.id ? record : existing))
+          : [record, ...previous.sessions],
       }));
     },
-    [persist],
+    [persist, state.profile.targetLanguage],
   );
 
   const importSnapshot = useCallback(
@@ -321,7 +338,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dismissError = useCallback(() => setState((previous) => ({ ...previous, error: null })), []);
 
-  const value = useMemo<AppContextValue>(() => ({ ...state, updateProfile, completeLesson, recordAttempt, addVocabulary, updateVocabulary, deleteVocabulary, saveSession, importSnapshot, resetAll, dismissError }), [
+  const value = useMemo<AppContextValue>(() => {
+    const languageId = state.profile.targetLanguage;
+    const inLanguage = <T extends { languageId?: string }>(items: T[]) =>
+      items.filter((item) => (item.languageId ?? 'en') === languageId);
+    return {
+      ...state,
+      completions: inLanguage(state.completions),
+      attempts: inLanguage(state.attempts),
+      vocabulary: inLanguage(state.vocabulary),
+      sessions: inLanguage(state.sessions),
+      allCompletions: state.completions,
+      allAttempts: state.attempts,
+      allVocabulary: state.vocabulary,
+      allSessions: state.sessions,
+      language: getLanguage(languageId),
+      updateProfile,
+      completeLesson,
+      recordAttempt,
+      addVocabulary,
+      updateVocabulary,
+      deleteVocabulary,
+      saveSession,
+      importSnapshot,
+      resetAll,
+      dismissError,
+    };
+  }, [
     state,
     updateProfile,
     completeLesson,

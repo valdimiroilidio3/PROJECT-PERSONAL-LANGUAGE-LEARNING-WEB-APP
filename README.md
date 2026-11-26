@@ -1,6 +1,6 @@
-# Lumio — Personal English Learning Web App
+# Lumio — Personal Language Learning Web App
 
-Lumio is a private, mobile-first English learning app built with Next.js. It combines a structured A1→B1 curriculum, a personal vocabulary notebook with spaced repetition, real-life scenarios, speech practice and an offline-first tutor with an original yellow robot mascot (Nori).
+Lumio is a private, mobile-first learning app built with Next.js. It teaches several languages and two programming languages with separate curricula, a personal vocabulary notebook with spaced repetition, real-life scenarios, speech practice where it makes sense, and an offline-first tutor with an original yellow robot mascot (Nori).
 
 Everything works without registration, subscription or a paid API. Learning data stays in the browser (IndexedDB) unless you explicitly enable a remote AI model.
 
@@ -37,18 +37,23 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs unit and integration tests (scoring, XP, analytics, spaced repetition, backup, IndexedDB, full lesson flow) |
+| `npm test` | Runs 40 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs and progress isolation) |
 
 ## What is included
 
-- **10 complete A1 lessons** plus 4 A2 lessons and 2 B1 lessons (16 total), all authored as validated structured data with real questions, Portuguese explanations, vocabulary and example sentences.
+- **Eight learning packs, 31 lessons total**, all authored as validated structured data with real questions, Portuguese explanations and examples:
+  - English — 16 lessons (A1→B1), the full original curriculum
+  - Spanish — 3 lessons, Dutch — 2, French — 2, German — 2, Italian — 2
+  - JavaScript — 2 lessons, Python — 2 lessons
+  - Programming packs use `L1/L2/L3` difficulty labels instead of inventing CEFR levels and have no fake listening/audio exercises.
+- **Progress isolation**: completions, attempts, vocabulary and tutor sessions are tagged with the language id; switching packs never mixes statistics. Backups contain every pack and validate the new fields.
 - **Nine exercise formats**: multiple choice, translation, word ordering, matching, fill-in-the-blank, listening, dialogue completion, sentence construction and reading comprehension.
 - **Lesson engine** with instant feedback, hearts as gentle feedback (never a hard lock), first-completion XP only, mistake review and a completion summary.
 - **Vocabulary notebook** with automatic import from lessons, manual entries, search, filters and editing.
 - **Spaced repetition** with transparent intervals (1, 2, 4, 7, 15, 30, 60, 120 days), priority for new/overdue/frequently missed words, four review grades, per-word history and explicit mastery states.
-- **Speech service** using the Web Speech API: English voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed.
-- **Real-life practice** with eight scenarios and keyword-based answer feedback.
-- **Tutor** with offline structured dialogues, three personalities, four difficulty levels, European/Brazilian Portuguese support, suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in.
+- **Speech service** using the Web Speech API with the selected language's locale: voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed; speech controls are hidden for code tracks.
+- **Real-life practice** with fifteen scenarios (eight English plus one per additional pack) and keyword-based answer feedback.
+- **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in.
 - **Gamification and analytics** derived only from saved activity: XP, levels, daily goals, streaks, achievements, weekly calendar, session history and personal bests.
 - **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
@@ -59,7 +64,7 @@ npm start
 | Route | Purpose |
 | --- | --- |
 | `/` | Dashboard with real saved metrics, daily challenge and learning path |
-| `/onboarding` | Language, level, goal, daily goal and short diagnostic quiz |
+| `/onboarding` | Chooses one of eight packs, level, goal, daily goal and a diagnostic drawn from that pack's real exercises |
 | `/learn` | Full learning path with locked/unlocked lessons |
 | `/lesson/[id]` | Interactive lesson player |
 | `/practice` | Real-life scenarios |
@@ -104,12 +109,13 @@ Notes:
 ```text
 app/                 App Router pages and the server-side tutor API
 components/          Shared UI, AppContext, lesson player, speech controls, mascot
-lib/content/         Validated A1/A2/B1 lesson data and practice scenarios
+lib/content/         Validated lesson packs and practice scenarios for all eight tracks
 lib/analytics.ts     Metrics derived from saved events
 lib/scoring.ts       Answer checking and XP rules
 lib/srs.ts           Spaced-repetition scheduling
 lib/db.ts            IndexedDB wrapper with memory fallback
-lib/tutor/           Offline dialogue engine
+lib/languages.ts     Language catalogue, locales, labels and metadata
+lib/tutor/           Offline dialogue engine per pack
 tests/               Unit tests
 ```
 
@@ -135,7 +141,7 @@ The visual system uses yellow `#FFE500`, warm cream `#F7F5EF`, dark ink `#20201D
 ## Limitations
 
 - Speech recognition quality depends on the browser, microphone permissions and accent; it is presented for confirmation, not as pronunciation scoring.
-- CEFR labels describe lesson content difficulty. The app does not issue assessed CEFR levels or certificates.
+- CEFR labels (natural languages) and L1/L2/L3 labels (programming) describe content difficulty. The app does not issue assessed levels or certificates.
 - AI feedback is learning assistance, not guaranteed linguistic assessment.
 - Remote tutor rate limiting is per server process; serverless platforms may run several instances.
-- The full lesson flow is covered by an integration test with simulated IndexedDB; speech recognition and real-browser reload are not automated here.
+- The full lesson flow and language isolation are covered by integration tests with simulated IndexedDB; speech recognition and real-browser checks are documented in `VALIDATION_REPORT.md`.

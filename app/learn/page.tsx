@@ -1,33 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Lock, Play, Sparkles } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { PageHeader, ProgressBar, SectionTitle, Tag } from '@/components/ui';
 import { isLessonUnlocked, recommendLesson } from '@/lib/analytics';
-import { lessons } from '@/lib/content';
-import type { CEFR } from '@/lib/types';
+import { lessonsFor } from '@/lib/content';
+import { levelLabel } from '@/lib/languages';
+import type { LessonLevel } from '@/lib/types';
 
-const filters: Array<{ id: CEFR | 'all'; label: string }> = [
+const naturalFilters: Array<{ id: LessonLevel | 'all'; label: string }> = [
   { id: 'all', label: 'Todas' },
   { id: 'A1', label: 'A1 · Base' },
   { id: 'A2', label: 'A2 · Elementar' },
   { id: 'B1', label: 'B1 · Intermédio' },
 ];
 
+const codeFilters: Array<{ id: LessonLevel | 'all'; label: string }> = [
+  { id: 'all', label: 'Todas' },
+  { id: 'L1', label: 'Iniciação' },
+  { id: 'L2', label: 'Intermédio' },
+  { id: 'L3', label: 'Avançado' },
+];
+
 export default function LearnPage() {
-  const { profile, completions } = useApp();
-  const [filter, setFilter] = useState<CEFR | 'all'>('all');
+  const { profile, language, completions } = useApp();
+  const lessons = lessonsFor(profile.targetLanguage);
+  const filters = language.kind === 'programming' ? codeFilters : naturalFilters;
+  const [filter, setFilter] = useState<LessonLevel | 'all'>('all');
+  useEffect(() => setFilter('all'), [profile.targetLanguage]);
   const recommended = recommendLesson(profile, lessons, completions);
-  const visible = filter === 'all' ? lessons : lessons.filter((lesson) => lesson.cefr === filter);
+  const visible = filter === 'all' ? lessons : lessons.filter((lesson) => lesson.level === filter);
   const percent = Math.round((completions.length / lessons.length) * 100);
 
   return (
     <div>
       <PageHeader
         eyebrow="Percurso de aprendizagem"
-        title="Aprender inglês"
+        title={`Aprender ${language.label.toLowerCase()}`}
         description="Lições curtas com vocabulário, exercícios e explicações em português. Desbloqueia a seguinte ao concluir a anterior."
         action={
           <Link href={`/lesson/${recommended.id}`} className="btn-primary">
@@ -70,7 +81,7 @@ export default function LearnPage() {
               {isRecommended && <span className="absolute -top-3 right-4"><Tag tone="sun"><Sparkles size={12} /> Recomendada</Tag></span>}
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-extrabold uppercase tracking-wider text-muted">{lesson.cefr} · {lesson.category}</p>
+                  <p className="text-xs font-extrabold uppercase tracking-wider text-muted">{levelLabel(lesson.languageId, lesson.level)} · {lesson.category}</p>
                   <h2 className="mt-1 text-xl font-black">{lesson.title}</h2>
                 </div>
                 <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${done ? 'bg-success-soft text-success' : unlocked ? 'bg-sun' : 'bg-cream text-muted'}`}>

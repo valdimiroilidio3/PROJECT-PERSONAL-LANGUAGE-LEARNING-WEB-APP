@@ -10,7 +10,7 @@ describe('local persistence', () => {
       profile: { onboarded: false },
       completions: [{ lessonId: 'greetings', xpAwarded: 19 }],
       attempts: [{ id: 7, lessonId: 'greetings' }],
-      vocabulary: [{ id: 'hello', english: 'hello' }],
+      vocabulary: [{ id: 'hello', term: 'hello' }],
       sessions: [{ id: 'chat-1', messages: [] }],
     });
 

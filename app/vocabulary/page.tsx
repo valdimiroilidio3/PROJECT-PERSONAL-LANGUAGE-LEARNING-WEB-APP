@@ -13,19 +13,19 @@ import type { VocabularyItem } from '@/lib/types';
 type Filter = 'all' | 'new' | 'learning' | 'known';
 
 export default function VocabularyPage() {
-  const { vocabulary, addVocabulary, deleteVocabulary } = useApp();
+  const { profile, language, vocabulary, addVocabulary, deleteVocabulary } = useApp();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<VocabularyItem | null>(null);
-  const [form, setForm] = useState({ english: '', portuguese: '', example: '', context: '' });
+  const [form, setForm] = useState({ term: '', translation: '', example: '', context: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     return vocabulary
-      .filter((item) => (item.english.toLowerCase().includes(term) || item.portuguese.toLowerCase().includes(term)))
+      .filter((item) => (item.term.toLowerCase().includes(term) || item.translation.toLowerCase().includes(term)))
       .filter((item) => {
         if (filter === 'new') return item.familiarity === 0 && item.correctCount === 0;
         if (filter === 'learning') return item.familiarity > 0 && item.familiarity < 3;
@@ -37,26 +37,26 @@ export default function VocabularyPage() {
 
   const openForm = (item?: VocabularyItem) => {
     setEditing(item ?? null);
-    setForm(item ? { english: item.english, portuguese: item.portuguese, example: item.example, context: item.context } : { english: '', portuguese: '', example: '', context: '' });
+    setForm(item ? { term: item.term, translation: item.translation, example: item.example, context: item.context } : { term: '', translation: '', example: '', context: '' });
     setError(null);
     setFormOpen(true);
   };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.english.trim() || !form.portuguese.trim()) {
-      setError('Preenche a palavra em inglês e a tradução.');
+    if (!form.term.trim() || !form.translation.trim()) {
+      setError(`Preenche o termo em ${language.label.toLowerCase()} e a explicação.`);
       return;
     }
     setSaving(true);
     const item = editing
       ? { ...editing, ...form }
-      : createVocabularyItem({ ...form, english: form.english.trim(), portuguese: form.portuguese.trim() });
+      : createVocabularyItem({ ...form, term: form.term.trim(), translation: form.translation.trim() }, { source: 'manual', languageId: profile.targetLanguage });
     await addVocabulary(item);
     setSaving(false);
     setFormOpen(false);
     setEditing(null);
-    setForm({ english: '', portuguese: '', example: '', context: '' });
+    setForm({ term: '', translation: '', example: '', context: '' });
   };
 
   return (
@@ -75,8 +75,8 @@ export default function VocabularyPage() {
             <button type="button" onClick={() => setFormOpen(false)} aria-label="Fechar formulário"><X size={18} /></button>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div><label className="label" htmlFor="english">Inglês *</label><input id="english" className="input" value={form.english} onChange={(event) => setForm({ ...form, english: event.target.value })} placeholder="e.g. to improve" /></div>
-            <div><label className="label" htmlFor="portuguese">Português *</label><input id="portuguese" className="input" value={form.portuguese} onChange={(event) => setForm({ ...form, portuguese: event.target.value })} placeholder="ex.: melhorar" /></div>
+            <div><label className="label" htmlFor="term">{language.termLabel} *</label><input id="term" className="input" value={form.term} onChange={(event) => setForm({ ...form, term: event.target.value })} placeholder={language.kind === 'programming' ? 'ex.: const' : 'ex.: to improve'} /></div>
+            <div><label className="label" htmlFor="translation">{language.translationLabel} *</label><input id="translation" className="input" value={form.translation} onChange={(event) => setForm({ ...form, translation: event.target.value })} placeholder="ex.: melhorar" /></div>
             <div className="sm:col-span-2"><label className="label" htmlFor="example">Frase de exemplo</label><input id="example" className="input" value={form.example} onChange={(event) => setForm({ ...form, example: event.target.value })} placeholder="I want to improve my English." /></div>
             <div className="sm:col-span-2"><label className="label" htmlFor="context">Contexto</label><input id="context" className="input" value={form.context} onChange={(event) => setForm({ ...form, context: event.target.value })} placeholder="Onde encontraste esta palavra?" /></div>
           </div>
@@ -113,10 +113,10 @@ export default function VocabularyPage() {
             <article key={item.id} className="card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-lg font-black">{item.english}</p>
-                  <p className="text-sm font-bold text-muted">{item.portuguese}</p>
+                  <p className="truncate text-lg font-black">{item.term}</p>
+                  <p className="text-sm font-bold text-muted">{item.translation}</p>
                 </div>
-                <SpeakControl text={item.example || item.english} compact />
+                {language.speech && <SpeakControl text={item.example || item.term} compact />}
               </div>
               {item.example && <p className="mt-3 text-sm italic text-ink/80">“{item.example}”</p>}
               {item.context && <p className="mt-1 text-xs text-muted">{item.context}</p>}

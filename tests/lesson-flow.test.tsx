@@ -61,8 +61,8 @@ async function answerExercise(exercise: Exercise, shouldBeCorrect: boolean) {
     clickByName('Verificar frase');
   } else if (exercise.type === 'matching') {
     for (const pair of exercise.pairs) {
-      clickByName(pair.english);
-      clickByName(shouldBeCorrect ? pair.portuguese : exercise.pairs.find((item) => item.english !== pair.english)!.portuguese);
+      clickByName(pair.term);
+      clickByName(shouldBeCorrect ? pair.translation : exercise.pairs.find((item) => item.term !== pair.term)!.translation);
     }
     clickByName('Verificar associações');
   }
