@@ -103,3 +103,8 @@ Inspirado nos padrões de produto de Duolingo e Tooter, mas com identidade, comp
 ## Automações
 
 `typecheck`, `lint`, `test` e `build` terminaram com código 0. A suíte ficou com 14 ficheiros e 44 testes, incluindo limiares de liga e cálculo de missões a partir de atividade guardada.
+
+### Publicação da gamificação
+
+- Deploy de produção: `dpl_EVDBC6CiGhtdhysr1CetChopS3JJ`, commit `8c29a3c`, estado `READY`, alias **https://lumio-english.vercel.app**.
+- Verificação em produção: as quatro missões, os limiares das ligas e a explicação “Não há rivais inventados” apareceram no painel inicial com dados zerados para um visitante novo.
