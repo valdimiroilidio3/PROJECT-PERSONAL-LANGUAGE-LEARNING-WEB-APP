@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, HardDrive, Info, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
-import { PageHeader, SectionTitle, Tag } from '@/components/ui';
+import { PageHeader, SectionTitle } from '@/components/ui';
 import { createSnapshot, parseSnapshot } from '@/lib/backup';
-import type { LearnerGoal, LearnerLevel } from '@/lib/types';
+import { languages } from '@/lib/languages';
+import type { LanguageId, LearnerGoal, LearnerLevel } from '@/lib/types';
 
 const levels: { id: LearnerLevel; label: string }[] = [
   { id: 'beginner', label: 'Iniciante' },
@@ -23,7 +24,7 @@ const goals: { id: LearnerGoal; label: string }[] = [
 ];
 
 export default function SettingsPage() {
-  const { profile, updateProfile, completions, attempts, vocabulary, sessions, storageMode, importSnapshot, resetAll } = useApp();
+  const { profile, updateProfile, language, allCompletions, allAttempts, allVocabulary, allSessions, storageMode, importSnapshot, resetAll } = useApp();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState('');
@@ -38,7 +39,7 @@ export default function SettingsPage() {
   }, []);
 
   const exportData = () => {
-    const snapshot = createSnapshot({ profile, completions, attempts, vocabulary, sessions });
+    const snapshot = createSnapshot({ profile, completions: allCompletions, attempts: allAttempts, vocabulary: allVocabulary, sessions: allSessions });
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -86,8 +87,16 @@ export default function SettingsPage() {
           <SectionTitle title="Plano de aprendizagem" />
           <div className="card space-y-5">
             <div>
-              <p className="label">Idiomas</p>
-              <div className="flex flex-wrap gap-2"><Tag>🇵🇹 Português → 🇬🇧 Inglês</Tag><Tag>Definido no arranque</Tag></div>
+              <label className="label" htmlFor="target-language">O que queres aprender</label>
+              <select
+                id="target-language"
+                className="input"
+                value={profile.targetLanguage}
+                onChange={(event) => void updateProfile({ targetLanguage: event.target.value as LanguageId, recommendedLessonId: undefined })}
+              >
+                {languages.map((item) => <option key={item.id} value={item.id}>{item.emblem} {item.label}</option>)}
+              </select>
+              <p className="mt-2 text-xs leading-relaxed text-muted">Português → {language.label}. Cada língua tem o seu próprio percurso, vocabulário e estatísticas; mudar não apaga nada.</p>
             </div>
             <div>
               <label className="label" htmlFor="level">Nível atual</label>
@@ -99,6 +108,13 @@ export default function SettingsPage() {
               <label className="label" htmlFor="goal">Objetivo principal</label>
               <select id="goal" className="input" value={profile.goal} onChange={(event) => void updateProfile({ goal: event.target.value as LearnerGoal })}>
                 {goals.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="support-locale">Português de apoio</label>
+              <select id="support-locale" className="input" value={profile.supportLocale ?? 'pt-PT'} onChange={(event) => void updateProfile({ supportLocale: event.target.value as 'pt-PT' | 'pt-BR' })}>
+                <option value="pt-PT">Português europeu</option>
+                <option value="pt-BR">Português brasileiro</option>
               </select>
             </div>
             <div>
@@ -176,7 +192,7 @@ export default function SettingsPage() {
       <section className="mt-8">
         <SectionTitle title="Acessibilidade e voz" />
         <div className="card text-sm leading-relaxed text-muted">
-          <p>A síntese de voz usa as vozes inglesas disponíveis no teu browser (Web Speech API). A velocidade lenta está disponível nos controlos de áudio.</p>
+          <p>A síntese de voz usa as vozes disponíveis no teu browser para {language.label.toLowerCase()} (Web Speech API). A velocidade lenta está disponível nos controlos de áudio.</p>
           <p className="mt-2">O reconhecimento de voz depende de permissão do microfone e de suporte do browser (melhor em Chrome/Edge). Há sempre um campo de texto alternativo. Não oferecemos pontuação fonética automática.</p>
         </div>
       </section>

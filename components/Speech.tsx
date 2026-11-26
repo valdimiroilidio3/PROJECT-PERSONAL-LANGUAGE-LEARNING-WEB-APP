@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Mic, Square, Volume2 } from 'lucide-react';
 import { speak, speechRecognitionSupported, speechSynthesisSupported, startRecognition } from '@/lib/speech';
+import { useApp } from './AppContext';
 
 export function SpeakControl({ text, compact = false }: { text: string; compact?: boolean }) {
+  const { language } = useApp();
   const [slow, setSlow] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [supported, setSupported] = useState(false);
@@ -14,11 +16,11 @@ export function SpeakControl({ text, compact = false }: { text: string; compact?
     setSpeaking(false);
   }, [text]);
 
-  if (!supported) return null;
+  if (!supported || !language.speech) return null;
 
   const play = async () => {
     setSpeaking(true);
-    await speak(text, { rate: slow ? 0.65 : 1 });
+    await speak(text, { rate: slow ? 0.65 : 1, lang: language.locale });
     setSpeaking(false);
   };
 
@@ -51,7 +53,7 @@ export function SpeakControl({ text, compact = false }: { text: string; compact?
 export function SpeechInput({
   value,
   onChange,
-  placeholder = 'Escreva a sua resposta em inglês…',
+  placeholder = 'Escreva a sua resposta…',
   minRows = 2,
 }: {
   value: string;
@@ -59,12 +61,13 @@ export function SpeechInput({
   placeholder?: string;
   minRows?: number;
 }) {
+  const { language } = useApp();
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [stopRecognition, setStopRecognition] = useState<(() => void) | null>(null);
 
-  useEffect(() => setSupported(speechRecognitionSupported()), []);
+  useEffect(() => setSupported(speechRecognitionSupported() && language.speech), [language.speech]);
 
   const toggle = () => {
     if (listening) {
@@ -80,7 +83,7 @@ export function SpeechInput({
         setListening(false);
         setStopRecognition(null);
       },
-    });
+    }, language.locale);
     if (!stop) {
       setMessage('Este browser não suporta reconhecimento de voz. Use o campo de texto.');
       return;
@@ -98,7 +101,7 @@ export function SpeechInput({
           placeholder={placeholder}
           rows={minRows}
           className="input resize-y"
-          aria-label="Resposta em inglês"
+          aria-label="Resposta na língua alvo"
         />
         {supported && (
           <button

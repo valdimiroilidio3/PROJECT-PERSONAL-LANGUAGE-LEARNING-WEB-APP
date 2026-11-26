@@ -6,7 +6,9 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Check, CircleCheck } from 'lucide-react';
 import { Mascot } from '@/components/Mascot';
 import { useApp } from '@/components/AppContext';
-import type { LearnerGoal, LearnerLevel } from '@/lib/types';
+import { diagnosticFor, lessonForScore, lessonsFor } from '@/lib/content';
+import { languages } from '@/lib/languages';
+import type { LanguageId, LearnerGoal, LearnerLevel } from '@/lib/types';
 
 const levels: { id: LearnerLevel; title: string; description: string }[] = [
   { id: 'beginner', title: 'Iniciante', description: 'Começo do zero ou com frases muito simples.' },
@@ -25,47 +27,42 @@ const goals: { id: LearnerGoal; title: string; description: string }[] = [
 
 const dailyGoals = [5, 10, 15, 20] as const;
 
-const diagnostic = [
-  { question: 'I ___ from Portugal.', options: ['am', 'is', 'are'], answer: 0, points: 1, translation: 'Sou de Portugal.' },
-  { question: 'She ___ to work by bus.', options: ['go', 'goes', 'going'], answer: 1, points: 2, translation: 'Ela vai para o trabalho de autocarro.' },
-  { question: 'Yesterday I ___ to the cinema.', options: ['go', 'went', 'have gone'], answer: 1, points: 2, translation: 'Ontem fui ao cinema.' },
-  { question: 'If I ___ more time, I would travel more.', options: ['have', 'had', 'will have'], answer: 1, points: 3, translation: 'Se tivesse mais tempo, viajaria mais.' },
-  { question: 'Although it was late, we ___ working.', options: ['continued', 'continue', 'continues'], answer: 0, points: 4, translation: 'Embora fosse tarde, continuámos a trabalhar.' },
-];
-
-function recommend(score: number): string {
-  if (score <= 3) return 'greetings';
-  if (score <= 6) return 'numbers-time';
-  if (score <= 9) return 'past-experiences';
-  return 'opinions';
-}
-
 export default function OnboardingPage() {
   const router = useRouter();
   const { profile, updateProfile } = useApp();
   const [step, setStep] = useState(0);
+  const [languageId, setLanguageId] = useState<LanguageId>(profile.targetLanguage);
   const [level, setLevel] = useState<LearnerLevel>(profile.level);
   const [goal, setGoal] = useState<LearnerGoal>(profile.goal);
   const [minutes, setMinutes] = useState<(typeof dailyGoals)[number]>(profile.dailyGoalMinutes);
   const [answers, setAnswers] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
 
+  const language = languages.find((item) => item.id === languageId) ?? languages[0];
+  const diagnostic = diagnosticFor(languageId);
   const totalSteps = 5 + diagnostic.length;
-  const score = answers.reduce((sum, answer, index) => sum + (answer === diagnostic[index].answer ? diagnostic[index].points : 0), 0);
-  const diagnosticDone = answers.length === diagnostic.length;
-  const recommended = recommend(score);
+  const score = answers.reduce((sum, answer, index) => sum + (answer === diagnostic[index]?.answerIndex ? (diagnostic[index]?.points ?? 0) : 0), 0);
+  const diagnosticDone = diagnostic.length > 0 && answers.length === diagnostic.length;
+  const recommended = lessonForScore(languageId, score);
+  const packSize = lessonsFor(languageId).length;
+
+  const changeLanguage = (id: LanguageId) => {
+    setLanguageId(id);
+    setAnswers([]);
+    setStep(0);
+  };
 
   const finish = async () => {
     setSaving(true);
     await updateProfile({
       onboarded: true,
       nativeLanguage: 'pt',
-      targetLanguage: 'en',
+      targetLanguage: languageId,
       level,
       goal,
       dailyGoalMinutes: minutes,
       diagnosticScore: score,
-      recommendedLessonId: recommended,
+      recommendedLessonId: recommended.id,
     });
     router.push('/learn');
   };
@@ -91,20 +88,27 @@ export default function OnboardingPage() {
       <motion.div key={step} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="card min-h-[380px]">
         {step === 0 && (
           <>
-            <h1 className="text-2xl font-black">Vamos criar o teu plano</h1>
-            <p className="mt-2 text-sm text-muted">Escolhemos português como língua nativa e inglês como língua a aprender. Podes mudar depois.</p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border-2 border-ink bg-cream p-5">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted">De</p>
-                <p className="mt-2 text-xl font-black">🇵🇹 Português</p>
-              </div>
-              <div className="rounded-3xl border-2 border-sun bg-sun-soft p-5">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted">Para</p>
-                <p className="mt-2 text-xl font-black">🇬🇧 Inglês</p>
-              </div>
+            <h1 className="text-2xl font-black">O que queres aprender?</h1>
+            <p className="mt-2 text-sm text-muted">Escolhe uma língua ou uma linguagem de programação. Podes mudar sempre que quiseres nas definições.</p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
+              {languages.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => changeLanguage(item.id)}
+                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${languageId === item.id ? 'border-ink bg-sun-soft' : 'border-line hover:border-ink/30'}`}
+                  aria-pressed={languageId === item.id}
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cream text-lg font-black">{item.emblem}</span>
+                  <span className="min-w-0">
+                    <span className="block font-extrabold">{item.label}</span>
+                    <span className="block text-[11px] leading-snug text-muted">{item.description}</span>
+                  </span>
+                </button>
+              ))}
             </div>
-            <p className="mt-6 rounded-2xl bg-cream p-4 text-sm leading-relaxed text-muted">
-              Tudo funciona sem conta, sem subscrição e sem enviar os teus dados para a nuvem.
+            <p className="mt-5 rounded-2xl bg-cream p-4 text-sm leading-relaxed text-muted">
+              Tudo funciona sem conta, sem subscrição e sem enviar os teus dados para a nuvem. O progresso de cada língua fica separado.
             </p>
           </>
         )}
@@ -132,7 +136,7 @@ export default function OnboardingPage() {
 
         {step === 2 && (
           <>
-            <h1 className="text-2xl font-black">Porque queres aprender inglês?</h1>
+            <h1 className="text-2xl font-black">Porque queres aprender {language.label.toLowerCase()}?</h1>
             <p className="mt-2 text-sm text-muted">Adaptamos os exemplos e as situações ao teu objetivo.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {goals.map((item) => (
@@ -176,13 +180,13 @@ export default function OnboardingPage() {
         {step >= 4 && step < totalSteps - 1 && (
           <>
             <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Mini-diagnóstico · {step - 3}/{diagnostic.length}</p>
-            <h1 className="mt-2 text-2xl font-black">Escolhe a forma correta</h1>
-            <p className="mt-2 text-sm text-muted">{diagnostic[step - 4].translation}</p>
-            <p className="mt-6 rounded-2xl bg-cream p-5 text-xl font-extrabold">{diagnostic[step - 4].question}</p>
+            <h1 className="mt-2 text-2xl font-black">Escolhe a resposta correta</h1>
+            <p className="mt-2 text-sm text-muted">Pergunta retirada do conteúdo real de {language.label}.</p>
+            <p className="mt-6 rounded-2xl bg-cream p-5 text-xl font-extrabold">{diagnostic[step - 4].prompt}</p>
             <div className="mt-4 space-y-3">
               {diagnostic[step - 4].options.map((option, index) => (
                 <button
-                  key={option}
+                  key={`${option}-${index}`}
                   type="button"
                   onClick={() => setAnswers((previous) => {
                     const next = [...previous];
@@ -192,7 +196,7 @@ export default function OnboardingPage() {
                   className={`flex w-full items-center justify-between rounded-2xl border px-5 py-4 text-left text-base font-bold transition ${answers[step - 4] === index ? 'border-ink bg-sun-soft' : 'border-line hover:border-ink/30'}`}
                   aria-pressed={answers[step - 4] === index}
                 >
-                  {option}
+                  <span>{option}</span>
                   {answers[step - 4] === index && <Check size={18} />}
                 </button>
               ))}
@@ -202,38 +206,39 @@ export default function OnboardingPage() {
 
         {step === totalSteps - 1 && (
           <>
-            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-muted">Plano pronto</p>
-            <h1 className="mt-2 text-3xl font-black">Vamos começar!</h1>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              Com base nas tuas respostas ({score} pontos), recomendamos começar pela lição abaixo. O diagnóstico é apenas indicativo — não é um nível CEFR oficial.
+            <Mascot className="mx-auto h-28 w-28" mood="celebrate" />
+            <h1 className="mt-3 text-center text-2xl font-black">Plano pronto</h1>
+            <p className="mt-2 text-center text-sm text-muted">
+              Vais começar com {language.emblem} {language.label}, {level} · {minutes} min/dia.
             </p>
-            <div className="mt-6 rounded-3xl bg-sun-soft p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted">Primeira lição recomendada</p>
-              <p className="mt-2 text-lg font-black">{recommended === 'greetings' ? 'Saudações e apresentações' : recommended === 'numbers-time' ? 'Números e horas' : recommended === 'past-experiences' ? 'Experiências passadas' : 'Opiniões e razões'}</p>
-            </div>
-            <div className="mt-6 grid grid-cols-3 gap-3 text-center text-xs">
-              <div className="rounded-2xl bg-cream p-3"><p className="font-black">{minutes} min</p><p className="text-muted">por dia</p></div>
-              <div className="rounded-2xl bg-cream p-3"><p className="font-black capitalize">{level}</p><p className="text-muted">nível</p></div>
-              <div className="rounded-2xl bg-cream p-3"><p className="font-black capitalize">{goal}</p><p className="text-muted">objetivo</p></div>
+            <div className="mt-6 rounded-2xl bg-cream p-5 text-sm leading-relaxed">
+              <p><strong>Primeira lição:</strong> {recommended.title}</p>
+              <p className="mt-1 text-muted">Com base nas tuas respostas ({score} pontos), recomendamos começar por aqui. O diagnóstico é apenas indicativo — não é um nível oficial.</p>
+              <p className="mt-2 text-xs text-muted">{packSize} lições disponíveis neste percurso. As estatísticas de outras línguas ficam separadas.</p>
             </div>
           </>
         )}
-      </motion.div>
 
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <button type="button" className="btn-ghost" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0}>
-          <ArrowLeft size={16} /> Voltar
-        </button>
-        {step < totalSteps - 1 ? (
-          <button type="button" className="btn-primary" disabled={!canAdvance} onClick={() => setStep((value) => value + 1)}>
-            Continuar <ArrowRight size={16} />
+        <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
+          <button
+            type="button"
+            onClick={() => setStep((value) => Math.max(0, value - 1))}
+            disabled={step === 0}
+            className="btn-ghost disabled:opacity-40"
+          >
+            <ArrowLeft size={16} /> Voltar
           </button>
-        ) : (
-          <button type="button" className="btn-primary" disabled={saving} onClick={() => void finish()}>
-            {saving ? 'A guardar…' : 'Começar a aprender'} <ArrowRight size={16} />
-          </button>
-        )}
-      </div>
+          {step < totalSteps - 1 ? (
+            <button type="button" onClick={() => setStep((value) => value + 1)} disabled={!canAdvance} className="btn-primary disabled:opacity-40">
+              Continuar <ArrowRight size={16} />
+            </button>
+          ) : (
+            <button type="button" onClick={() => void finish()} disabled={!diagnosticDone || saving} className="btn-primary disabled:opacity-40">
+              {saving ? 'A guardar…' : 'Começar'} <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

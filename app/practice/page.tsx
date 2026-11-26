@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle2, Eye, Lightbulb, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { SpeechInput, SpeakControl } from '@/components/Speech';
-import { EmptyState, PageHeader, ProgressBar, Tag } from '@/components/ui';
-import { scenarios } from '@/lib/content/scenarios';
+import { PageHeader, ProgressBar, Tag } from '@/components/ui';
+import { scenariosFor } from '@/lib/content';
+import { levelLabel } from '@/lib/languages';
 import { evaluateScenarioAnswer, scenarioXp } from '@/lib/practice';
 
 interface PracticeResult {
@@ -16,7 +17,8 @@ interface PracticeResult {
 }
 
 export default function PracticePage() {
-  const { recordAttempt } = useApp();
+  const { profile, language, recordAttempt } = useApp();
+  const scenarios = useMemo(() => scenariosFor(profile.targetLanguage), [profile.targetLanguage]);
   const [scenarioId, setScenarioId] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [text, setText] = useState('');
@@ -29,7 +31,7 @@ export default function PracticePage() {
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('scenario');
     if (requested && scenarios.some((item) => item.id === requested)) setScenarioId(requested);
-  }, []);
+  }, [scenarios]);
 
   const scenario = scenarios.find((item) => item.id === scenarioId);
 
@@ -98,7 +100,7 @@ export default function PracticePage() {
       <div>
         <PageHeader
           eyebrow="Prática com situações reais"
-          title="Praticar inglês"
+          title={`Praticar ${language.label.toLowerCase()}`}
           description="Escolhe uma situação da vida real, escreve ou diz a tua resposta e compara com um modelo natural."
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -106,7 +108,7 @@ export default function PracticePage() {
             <button key={item.id} type="button" onClick={() => select(item.id)} className="card flex flex-col items-start text-left transition hover:-translate-y-0.5 hover:border-ink/30">
               <div className="flex w-full items-start justify-between gap-2">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sun-soft"><Trophy size={19} /></span>
-                <Tag>{item.cefr}</Tag>
+                <Tag>{levelLabel(item.languageId, item.level)}</Tag>
               </div>
               <h2 className="mt-4 text-lg font-black">{item.title}</h2>
               <p className="mt-1 flex-1 text-sm text-muted">{item.description}</p>
@@ -150,7 +152,7 @@ export default function PracticePage() {
         <div className="card">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Tag tone="sun">{scenario.cefr} · {scenario.category}</Tag>
+              <Tag tone="sun">{levelLabel(scenario.languageId, scenario.level)} · {scenario.category}</Tag>
               <h1 className="mt-2 text-2xl font-black">{scenario.title}</h1>
             </div>
             <Link href="/tutor" className="btn-ghost !px-3 !py-2 text-xs">Continuar com o tutor</Link>
@@ -160,7 +162,7 @@ export default function PracticePage() {
           <p className="mt-2 text-xl font-black">{scenario.prompts[step]}</p>
           <p className="mt-1 text-sm text-muted">{scenario.translations[step]}</p>
           <div className="mt-3 flex items-center gap-2">
-            <SpeakControl text={scenario.modelAnswers[step]} compact />
+            {language.speech && <SpeakControl text={scenario.modelAnswers[step]} compact />}
             <button type="button" onClick={() => setShowHint((value) => !value)} className="inline-flex items-center gap-1 text-xs font-bold text-muted hover:text-ink">
               <Lightbulb size={14} /> {showHint ? 'Esconder dica' : 'Ver dica'}
             </button>

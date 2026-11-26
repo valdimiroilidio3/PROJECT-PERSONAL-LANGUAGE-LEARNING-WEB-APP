@@ -8,7 +8,7 @@ import { useApp } from '@/components/AppContext';
 import { Mascot } from '@/components/Mascot';
 import { SpeakControl } from '@/components/Speech';
 import { EmptyState, PageHeader, ProgressBar, Tag } from '@/components/ui';
-import { reviewPriority, reviewVocabulary, type ReviewQuality } from '@/lib/srs';
+import { masteryStatus, reviewPriority, reviewVocabulary, type ReviewQuality } from '@/lib/srs';
 import type { VocabularyItem } from '@/lib/types';
 
 type Mode = 'priority' | 'due' | 'new';
@@ -21,7 +21,7 @@ const qualityLabels: { id: ReviewQuality; label: string; detail: string; style: 
 ];
 
 export default function ReviewPage() {
-  const { vocabulary, updateVocabulary, recordAttempt } = useApp();
+  const { language, vocabulary, updateVocabulary, recordAttempt } = useApp();
   const [mode, setMode] = useState<Mode>('priority');
   const [queue, setQueue] = useState<VocabularyItem[] | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -67,8 +67,8 @@ export default function ReviewPage() {
         exerciseType: 'translation',
         category: current.context || 'Vocabulário',
         correct: quality === 'good' || quality === 'easy',
-        userAnswer: current.english,
-        correctAnswer: current.portuguese,
+        userAnswer: current.term,
+        correctAnswer: current.translation,
         durationMs,
         xpAwarded: xp,
         source: 'review',
@@ -108,16 +108,21 @@ export default function ReviewPage() {
               </div>
               <motion.div key={current.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card min-h-[360px]">
                 <div className="flex items-center justify-between">
-                  <Tag tone={current.familiarity === 0 ? 'sun' : 'neutral'}>{current.familiarity === 0 ? 'Palavra nova' : `Familiaridade ${current.familiarity}/7`}</Tag>
-                  <SpeakControl text={current.example || current.english} compact />
+                  <Tag tone={masteryStatus(current) === 'mastered' ? 'green' : masteryStatus(current) === 'new' ? 'sun' : 'neutral'}>
+                    {masteryStatus(current) === 'mastered' ? 'Dominada' : masteryStatus(current) === 'new' ? 'Nova' : 'Em aprendizagem'} · {current.familiarity}/7
+                  </Tag>
+                  {language.speech && <SpeakControl text={current.example || current.term} compact />}
                 </div>
                 <div className="mt-10 text-center">
-                  <h2 className="text-3xl font-black sm:text-4xl">{current.english}</h2>
+                  <h2 className="text-3xl font-black sm:text-4xl">{current.term}</h2>
                   {revealed ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <p className="mt-4 text-xl font-bold text-success">{current.portuguese}</p>
+                      <p className="mt-4 text-xl font-bold text-success">{current.translation}</p>
                       {current.example && <p className="mt-4 text-sm italic text-muted">“{current.example}”</p>}
                       {current.context && <p className="mt-2 text-xs text-muted">{current.context}</p>}
+                      <p className="mt-3 text-[11px] text-muted">
+                        Histórico: {current.history?.length ?? 0} revisões · {current.correctCount} acertos · {current.incorrectCount} erros
+                      </p>
                     </motion.div>
                   ) : (
                     <p className="mt-5 text-sm text-muted">Tenta lembrar-te do significado antes de revelar.</p>

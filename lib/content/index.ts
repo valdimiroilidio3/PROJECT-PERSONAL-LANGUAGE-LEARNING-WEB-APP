@@ -1,9 +1,30 @@
-import type { Exercise, Lesson } from '../types';
+import type { DiagnosticQuestion, Exercise, LanguageId, Lesson, PracticeScenario } from '../types';
 import { normalizeAnswer } from '../scoring';
 import { a1Lessons } from './a1';
 import { laterLessons } from './advanced';
+import { esLessons } from './es';
+import { nlLessons } from './nl';
+import { frLessons } from './fr';
+import { deLessons } from './de';
+import { itLessons } from './it';
+import { javascriptLessons } from './javascript';
+import { pythonLessons } from './python';
+import { scenarios as enScenarios } from './scenarios.en';
+import { extraScenarios } from './scenarios.extra';
 
-export const lessons: Lesson[] = [...a1Lessons, ...laterLessons];
+const packs: Record<LanguageId, Lesson[]> = {
+  en: [...a1Lessons, ...laterLessons],
+  es: esLessons,
+  nl: nlLessons,
+  fr: frLessons,
+  de: deLessons,
+  it: itLessons,
+  javascript: javascriptLessons,
+  python: pythonLessons,
+};
+
+export const lessons: Lesson[] = Object.values(packs).flat();
+export const scenarios: PracticeScenario[] = [...enScenarios, ...extraScenarios];
 
 /** Content is checked once at module load so a broken exercise cannot silently ship. */
 export function validateLessons(items: Lesson[]): void {
@@ -53,7 +74,7 @@ function validateExercise(exercise: Exercise, lessonId: string): void {
       break;
     }
     case 'matching':
-      if (exercise.pairs.length < 3 || exercise.pairs.some((pair) => !pair.english || !pair.portuguese)) {
+      if (exercise.pairs.length < 3 || exercise.pairs.some((pair) => !pair.term || !pair.translation)) {
         throw new Error(`Invalid matching pairs in ${label}`);
       }
       break;
@@ -64,6 +85,43 @@ function validateExercise(exercise: Exercise, lessonId: string): void {
 
 validateLessons(lessons);
 
-export function getLesson(id: string): Lesson | undefined {
-  return lessons.find((lesson) => lesson.id === id);
+export function lessonsFor(languageId: LanguageId): Lesson[] {
+  return packs[languageId] ?? packs.en;
+}
+
+export function getLesson(id: string, languageId?: LanguageId): Lesson | undefined {
+  const pool = languageId ? lessonsFor(languageId) : lessons;
+  return pool.find((lesson) => lesson.id === id);
+}
+
+export function scenariosFor(languageId: LanguageId): PracticeScenario[] {
+  return scenarios.filter((scenario) => scenario.languageId === languageId);
+}
+
+export function getScenario(id: string, languageId?: LanguageId): PracticeScenario | undefined {
+  const pool = languageId ? scenariosFor(languageId) : scenarios;
+  return pool.find((scenario) => scenario.id === id);
+}
+
+/** Diagnostics are drawn from the pack's own exercises: no invented questions. */
+export function diagnosticFor(languageId: LanguageId): DiagnosticQuestion[] {
+  const first = lessonsFor(languageId)[0];
+  if (!first) return [];
+  return first.exercises
+    .filter((exercise): exercise is Exercise & { options: string[]; correctIndex: number } => 'options' in exercise)
+    .slice(0, 3)
+    .map((exercise, index) => ({
+      prompt: 'question' in exercise ? exercise.question : 'sentence' in exercise ? exercise.sentence : exercise.prompt,
+      options: exercise.options,
+      answerIndex: exercise.correctIndex,
+      points: index + 1,
+      hint: exercise.explanation,
+    }));
+}
+
+/** Maps a indicative score onto a real lesson in the pack. */
+export function lessonForScore(languageId: LanguageId, score: number): Lesson {
+  const items = lessonsFor(languageId);
+  const index = score <= 1 ? 0 : score <= 3 ? 1 : score <= 5 ? 2 : 3;
+  return items[Math.min(index, items.length - 1)];
 }

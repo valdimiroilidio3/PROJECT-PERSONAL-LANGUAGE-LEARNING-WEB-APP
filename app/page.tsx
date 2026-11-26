@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 import {
   ArrowRight,
   BookOpen,
@@ -9,7 +10,6 @@ import {
   Flame,
   Lock,
   Sparkles,
-  Target,
   Trophy,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -17,14 +17,34 @@ import { Mascot } from '@/components/Mascot';
 import { useApp } from '@/components/AppContext';
 import { EmptyState, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
 import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/lib/analytics';
-import { lessons } from '@/lib/content';
-import { scenarios } from '@/lib/content/scenarios';
+import { getNextStep } from '@/lib/recommendations';
+import { lessonsFor, scenariosFor } from '@/lib/content';
 import { isOverdue } from '@/lib/srs';
+import { deriveDailyQuests, deriveHabitGarden, deriveLeague, deriveWeeklyChallenges } from '@/lib/gamification';
 
 export default function DashboardPage() {
-  const { profile, completions, attempts, vocabulary } = useApp();
-  const analytics = deriveAnalytics(completions, attempts, vocabulary);
-  const recommended = recommendLesson(profile, lessons, completions);
+  const { profile, language, completions, attempts, vocabulary } = useApp();
+  const lessons = useMemo(() => lessonsFor(profile.targetLanguage), [profile.targetLanguage]);
+  const scenarios = useMemo(() => scenariosFor(profile.targetLanguage), [profile.targetLanguage]);
+  const analytics = useMemo(() => deriveAnalytics(completions, attempts, vocabulary), [completions, attempts, vocabulary]);
+  const recommended = useMemo(() => recommendLesson(profile, lessons, completions), [profile, completions, lessons]);
+  const nextStep = useMemo(
+    () => getNextStep({ analytics, profile, lessons, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary, lessons],
+  );
+  const quests = useMemo(
+    () => deriveDailyQuests({ analytics, profile, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary],
+  );
+  const league = useMemo(() => deriveLeague(analytics.totalXp), [analytics.totalXp]);
+  const weekly = useMemo(
+    () => deriveWeeklyChallenges({ analytics, profile, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary],
+  );
+  const garden = useMemo(
+    () => deriveHabitGarden({ completions, attempts }),
+    [completions, attempts],
+  );
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
   const hour = new Date().getHours();
@@ -56,7 +76,7 @@ export default function DashboardPage() {
           <div className="min-w-[240px] flex-1">
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-sun">{greeting}!</p>
             <h1 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-              O teu inglês cresce<br />um dia de cada vez.
+              O teu {language.label.toLowerCase()} cresce<br />um dia de cada vez.
             </h1>
             <p className="mt-3 max-w-md text-sm text-white/70">
               Meta de hoje: <strong className="text-white">{analytics.todayXp} / {xpGoal} XP</strong> · {profile.dailyGoalMinutes} minutos de estudo
@@ -72,15 +92,147 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile label="Sequência" value={`${analytics.streak} dias`} hint="Dias consecutivos com atividade" icon={<Flame size={17} className="text-danger" />} />
-        <StatTile label="XP total" value={analytics.totalXp} hint="Ganho em lições e prática" icon={<Trophy size={17} className="text-sun-deep" />} />
+        <StatTile label="XP total" value={analytics.totalXp} hint="Lições, prática e revisões" icon={<Trophy size={17} className="text-sun-deep" />} />
+        <StatTile label="Estudo" value={`${analytics.studyMinutes} min`} hint="Tempo guardado nas sessões" icon={<Clock3 size={17} className="text-muted" />} />
         <StatTile label="Lições" value={analytics.completedLessons} hint={`de ${lessons.length} disponíveis`} icon={<CheckCircle2 size={17} className="text-success" />} />
+        <StatTile label="Precisão" value={`${analytics.accuracy}%`} hint={`${analytics.totalAttempts} respostas`} icon={<CheckCircle2 size={17} className="text-success" />} />
         <StatTile label="Palavras" value={vocabulary.length} hint={`${overdue.length} para revisar`} icon={<BookOpen size={17} className="text-muted" />} />
       </section>
 
+      <section>
+        <SectionTitle title="Missões de hoje" action={<span className="text-xs font-bold text-muted">{quests.filter((quest) => quest.completed).length} de {quests.length} concluídas</span>} />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {quests.map((quest) => (
+            <Link
+              key={quest.id}
+              href={quest.href}
+              className={`card flex flex-col gap-3 transition hover:-translate-y-0.5 hover:border-ink/25 ${quest.completed ? 'border-success/40 bg-success-soft' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-extrabold">{quest.title}</p>
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${quest.completed ? 'bg-success text-white' : 'bg-cream text-muted'}`}>
+                  {quest.completed ? <CheckCircle2 size={16} /> : `${quest.progress}`}
+                </span>
+              </div>
+              <p className="flex-1 text-xs leading-relaxed text-muted">{quest.description}</p>
+              <ProgressBar value={quest.progress} max={quest.target} color={quest.completed ? 'bg-success' : 'bg-sun'} />
+              <p className="text-[11px] font-extrabold text-muted">{quest.progress} / {quest.target} {quest.unit}</p>
+            </Link>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted">
+          A quinta missão muda todos os dias. Todo o progresso vem apenas de atividade guardada neste browser.
+        </p>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+        <div className="flex items-center gap-4 rounded-4xl border border-line bg-white p-5 shadow-card">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-sun-soft text-3xl" aria-hidden>{league.emblem}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-muted">A tua liga</p>
+            <p className="mt-1 text-2xl font-black">{league.name}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              {league.next
+                ? `${league.next.minXp - analytics.totalXp} XP até ${league.next.name}.`
+                : 'Topo da escala pessoal. Continua a praticar para manter o ritmo.'}
+            </p>
+            <div className="mt-3"><ProgressBar value={league.progress} max={league.target} /></div>
+          </div>
+        </div>
+        <div className="rounded-4xl border border-line bg-white p-5 shadow-card">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Como funcionam as ligas</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Não há rivais inventados: a liga sobe apenas com o XP que ganhaste nas lições, prática e revisões guardadas neste browser.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-extrabold">
+            <Tag>🥉 Bronze · 0 XP</Tag><Tag>🥈 Prata · 100 XP</Tag><Tag>🥇 Ouro · 300 XP</Tag><Tag>💎 Safira · 700 XP</Tag><Tag>👑 Diamante · 1500 XP</Tag>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="card min-w-0">
+          <SectionTitle
+            title="Desafios da semana"
+            action={<span className="text-xs font-bold text-muted">{weekly.window.label}</span>}
+          />
+          <div className="space-y-3">
+            {weekly.challenges.slice(0, 3).map((challenge) => (
+              <Link
+                key={challenge.id}
+                href={challenge.href}
+                className="flex flex-col gap-2 rounded-2xl border border-line p-3 transition hover:border-ink/30"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-extrabold">{challenge.title}</p>
+                  <Tag tone={challenge.completed ? 'green' : 'sun'}>
+                    {challenge.completed ? 'Feito' : `${challenge.progress} / ${challenge.target}`}
+                  </Tag>
+                </div>
+                <p className="text-xs leading-relaxed text-muted">{challenge.description}</p>
+                <ProgressBar value={challenge.progress} max={challenge.target} color={challenge.completed ? 'bg-success' : 'bg-sun'} />
+              </Link>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-muted">
+            A semana começa à segunda-feira. Não há penalização por dias sem atividade.
+          </p>
+        </div>
+
+        <div className="card min-w-0">
+          <SectionTitle title="Jardim de hábitos" />
+          <div className="grid grid-cols-7 gap-1.5" aria-label="Atividade dos últimos 28 dias">
+            {garden.days.map((day) => {
+              const dateLabel = new Date(`${day.key}T12:00:00`).toLocaleDateString('pt-PT', {
+                day: 'numeric',
+                month: 'short',
+              });
+              return (
+                <div
+                  key={day.key}
+                  title={`${dateLabel}: ${day.active ? `${day.xp} XP · ${day.minutes} min` : 'sem atividade guardada'}`}
+                  aria-label={`${dateLabel}: ${day.active ? `${day.xp} XP` : 'sem atividade'}`}
+                  className={`flex h-9 items-center justify-center rounded-xl text-[10px] font-black ${
+                    day.active
+                      ? day.isToday
+                        ? 'bg-ink text-white'
+                        : 'bg-success-soft text-success'
+                      : 'bg-line text-muted'
+                  }`}
+                >
+                  {day.label}
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted">
+            <span><strong className="text-ink">{garden.activeDays}</strong> dias com atividade</span>
+            <span><strong className="text-ink">{garden.totalXp}</strong> XP no período</span>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Cada quadrado é um dia real guardado neste browser. Dias vazios não apagam XP, liga nem conquistas.
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-4xl border border-line bg-white p-5 shadow-card sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-muted">O teu próximo passo</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">{nextStep.title}</h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted">{nextStep.description}</p>
+            <p className="mt-3 text-xs text-muted">Regra aplicada: {nextStep.reason}</p>
+          </div>
+          <Link href={nextStep.href} className="btn-primary">
+            {nextStep.cta} <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section>
+        <section className="min-w-0">
           <SectionTitle
             title="O teu percurso"
             action={<Link href="/learn" className="text-xs font-extrabold text-muted hover:text-ink">Ver tudo →</Link>}
@@ -100,7 +252,7 @@ export default function DashboardPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-extrabold">{lesson.title}</p>
-                    <p className="mt-0.5 text-xs text-muted">{lesson.cefr} · {lesson.minutes} min · {lesson.exercises.length} exercícios</p>
+                    <p className="mt-0.5 text-xs text-muted">{lesson.level} · {lesson.minutes} min · {lesson.exercises.length} exercícios</p>
                   </div>
                   {done && <Tag tone="green">Concluída</Tag>}
                 </Link>
@@ -109,7 +261,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <section className="card">
             <SectionTitle title="Desafio de hoje" />
             <p className="text-sm font-extrabold">{challenge.title}</p>

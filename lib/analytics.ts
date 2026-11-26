@@ -176,12 +176,17 @@ export function isLessonUnlocked(lessonId: string, lessons: Lesson[], completion
 export function recommendLesson(profile: Profile, lessons: Lesson[], completions: LessonCompletion[]): Lesson {
   const startIndex =
     profile.level === 'beginner' ? 0 : profile.level === 'elementary' ? 4 : profile.level === 'intermediate' ? 10 : 14;
+  const completed = new Set(completions.map((item) => item.lessonId));
+  const isUnlocked = (lesson: Lesson) => {
+    const index = lessons.findIndex((item) => item.id === lesson.id);
+    return index <= 0 || completed.has(lessons[index - 1].id) || completed.has(lesson.id);
+  };
   const preferred = profile.recommendedLessonId
     ? lessons.find((lesson) => lesson.id === profile.recommendedLessonId)
     : undefined;
   const candidates = preferred ? [preferred, ...lessons] : [...lessons.slice(startIndex), ...lessons.slice(0, startIndex)];
-  const next = candidates.find((lesson) => !completions.some((item) => item.lessonId === lesson.id));
-  return next ?? lessons[0];
+  const next = candidates.find((lesson) => !completed.has(lesson.id) && isUnlocked(lesson));
+  return next ?? lessons.find((lesson) => !completed.has(lesson.id)) ?? lessons[lessons.length - 1];
 }
 
 export interface Achievement {

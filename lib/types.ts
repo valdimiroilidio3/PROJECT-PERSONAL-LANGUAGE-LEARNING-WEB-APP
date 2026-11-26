@@ -1,4 +1,18 @@
-export type CEFR = 'A1' | 'A2' | 'B1';
+export type LanguageId =
+  | 'en'
+  | 'es'
+  | 'nl'
+  | 'fr'
+  | 'de'
+  | 'it'
+  | 'javascript'
+  | 'python';
+
+export type LessonLevel = 'A1' | 'A2' | 'B1' | 'L1' | 'L2' | 'L3';
+
+/** Kept as a named alias so existing callers read naturally. */
+export type CEFR = Exclude<LessonLevel, 'L1' | 'L2' | 'L3'>;
+
 export type LearnerLevel = 'beginner' | 'elementary' | 'intermediate' | 'advanced';
 export type LearnerGoal = 'everyday' | 'work' | 'travel' | 'study' | 'fluency';
 export type ExerciseType =
@@ -15,12 +29,13 @@ export type ExerciseType =
 export interface Profile {
   onboarded: boolean;
   nativeLanguage: 'pt';
-  targetLanguage: 'en';
+  targetLanguage: LanguageId;
   level: LearnerLevel;
   goal: LearnerGoal;
   dailyGoalMinutes: 5 | 10 | 15 | 20;
   diagnosticScore?: number;
   recommendedLessonId?: string;
+  supportLocale?: 'pt-PT' | 'pt-BR';
   createdAt: string;
 }
 
@@ -52,8 +67,8 @@ export interface WordOrderExercise extends BaseExercise {
 }
 
 export interface MatchingPair {
-  english: string;
-  portuguese: string;
+  term: string;
+  translation: string;
 }
 
 export interface MatchingExercise extends BaseExercise {
@@ -109,18 +124,19 @@ export type Exercise =
   | ReadingExercise;
 
 export interface VocabularySeed {
-  english: string;
-  portuguese: string;
+  term: string;
+  translation: string;
   example: string;
   context: string;
 }
 
 export interface Lesson {
   id: string;
+  languageId: LanguageId;
   title: string;
   subtitle: string;
   objective: string;
-  cefr: CEFR;
+  level: LessonLevel;
   category: string;
   minutes: number;
   xp: number;
@@ -128,8 +144,18 @@ export interface Lesson {
   exercises: Exercise[];
 }
 
+/** A diagnostic question is derived from real lesson content, never from demo data. */
+export interface DiagnosticQuestion {
+  prompt: string;
+  options: string[];
+  answerIndex: number;
+  points: number;
+  hint: string;
+}
+
 export interface Attempt {
   id?: number;
+  languageId?: LanguageId;
   lessonId: string;
   exerciseId: string;
   exerciseType: ExerciseType;
@@ -152,6 +178,7 @@ export interface LessonMistake {
 }
 
 export interface LessonCompletion {
+  languageId?: LanguageId;
   lessonId: string;
   completedAt: string;
   correctCount: number;
@@ -161,8 +188,19 @@ export interface LessonCompletion {
   mistakes: LessonMistake[];
 }
 
+export type ReviewQuality = 'again' | 'hard' | 'good' | 'easy';
+export type MasteryStatus = 'new' | 'learning' | 'mastered';
+
+export interface ReviewEvent {
+  timestamp: string;
+  quality: ReviewQuality;
+  familiarityAfter: number;
+  intervalDays: number;
+}
+
 export interface VocabularyItem extends VocabularySeed {
   id: string;
+  languageId?: LanguageId;
   familiarity: number;
   lastReviewedAt: string | null;
   nextReviewAt: string;
@@ -171,6 +209,8 @@ export interface VocabularyItem extends VocabularySeed {
   source: 'lesson' | 'manual';
   lessonId?: string;
   createdAt: string;
+  /** Optional so backups created before 2.0 remain valid. */
+  history?: ReviewEvent[];
 }
 
 export interface GrammarCorrection {
@@ -193,6 +233,7 @@ export interface TutorMessage {
 
 export interface TutorSession {
   id: string;
+  languageId?: LanguageId;
   createdAt: string;
   updatedAt: string;
   scenarioId: string;
@@ -204,11 +245,12 @@ export interface TutorSession {
 
 export interface PracticeScenario {
   id: string;
+  languageId: LanguageId;
   title: string;
   description: string;
   icon: string;
   category: string;
-  cefr: CEFR;
+  level: LessonLevel;
   prompts: string[];
   translations: string[];
   hints: string[];

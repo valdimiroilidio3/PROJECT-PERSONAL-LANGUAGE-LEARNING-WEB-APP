@@ -1,6 +1,7 @@
-import { getScenario } from '@/lib/content/scenarios';
+import { getScenario } from '@/lib/content';
 import { evaluateScenarioAnswer } from '@/lib/practice';
-import type { GrammarCorrection, LearnerLevel } from '@/lib/types';
+import type { GrammarCorrection, LanguageId, LearnerLevel } from '@/lib/types';
+import type { SupportLocale } from './validation';
 
 export interface TutorReply {
   text: string;
@@ -13,11 +14,25 @@ export type Personality = 'friendly' | 'patient' | 'formal';
 export type TutorMode = 'offline' | 'ollama' | 'openai-compatible';
 
 interface OfflineInput {
+  languageId?: LanguageId;
   scenarioId: string;
   personality: Personality;
   difficulty: LearnerLevel;
   userText: string;
   turn: number;
+  supportLocale?: SupportLocale;
+}
+
+/** Lightweight variant adaptation for the built-in scripted replies. */
+export function localizePortuguese(text: string, locale: SupportLocale = 'pt-PT'): string {
+  if (locale === 'pt-PT') return text;
+  return text
+    .replace(/conhecer-te/gi, 'conhecer você')
+    .replace(/encontrar-te/gi, 'encontrar você')
+    .replace(/gostas/gi, 'gosta')
+    .replace(/o teu/gi, 'o seu')
+    .replace(/a tua/gi, 'a sua')
+    .replace(/os teus/gi, 'os seus');
 }
 
 const scripts: Record<string, { lines: string[]; translations: string[]; followUps: string[] }> = {
@@ -63,6 +78,56 @@ const scripts: Record<string, { lines: string[]; translations: string[]; followU
   },
 };
 
+
+const extraScripts: Record<string, { lines: string[]; translations: string[]; followUps: string[] }> = {
+  'es-presentarse': {
+    lines: ['¡Hola! Soy Nori. ¿Cómo te llamas?', 'Mucho gusto. ¿De dónde eres?', 'Qué bien. ¿Qué te gusta hacer?', 'Genial. Dime algo que quieras practicar.'],
+    translations: ['Olá! Sou o Nori. Como te chamas?', 'Prazer em conhecer-te. De onde és?', 'Que bem! O que gostas de fazer?', 'Ótimo! Diz-me algo que queiras praticar.'],
+    followUps: ['Me llamo Ana.', 'Soy de Portugal.', 'Me gusta leer.', 'Quiero practicar español.'],
+  },
+  'nl-introductie': {
+    lines: ['Hallo, ik ben Nori. Hoe heet je?', 'Leuk je te ontmoeten. Waar kom je vandaan?', 'Wat leuk! Wat doe je graag?', 'Goed. Waar wil je mee oefenen?'],
+    translations: ['Olá, sou o Nori. Como te chamas?', 'Prazer em conhecer-te. De onde és?', 'Que bem! O que gostas de fazer?', 'Ótimo! O que queres praticar?'],
+    followUps: ['Ik heet Ana.', 'Ik kom uit Portugal.', 'Ik lees graag.', 'Ik wil Nederlands oefenen.'],
+  },
+  'fr-se-presenter': {
+    lines: ['Bonjour, je suis Nori. Comment tu t’appelles ?', 'Enchanté. D’où viens-tu ?', 'Super. Qu’est-ce que tu aimes faire ?', 'Très bien. Qu’est-ce que tu veux pratiquer ?'],
+    translations: ['Olá, sou o Nori. Como te chamas?', 'Prazer em conhecer-te. De onde és?', 'Ótimo! O que gostas de fazer?', 'Muito bem! O que queres praticar?'],
+    followUps: ['Je m’appelle Ana.', 'Je viens du Portugal.', 'J’aime lire.', 'Je veux pratiquer le français.'],
+  },
+  'de-vorstellen': {
+    lines: ['Hallo, ich bin Nori. Wie heißt du?', 'Freut mich. Woher kommst du?', 'Schön. Was machst du gern?', 'Gut. Was möchtest du üben?'],
+    translations: ['Olá, sou o Nori. Como te chamas?', 'Prazer em conhecer-te. De onde és?', 'Ótimo! O que gostas de fazer?', 'Bem! O que queres praticar?'],
+    followUps: ['Ich heiße Ana.', 'Ich komme aus Portugal.', 'Ich lese gern.', 'Ich möchte Deutsch üben.'],
+  },
+  'it-presentarti': {
+    lines: ['Ciao, sono Nori. Come ti chiami?', 'Piacere. Da dove vieni?', 'Bene. Cosa ti piace fare?', 'Ottimo. Cosa vuoi praticare?'],
+    translations: ['Olá, sou o Nori. Como te chamas?', 'Prazer em conhecer-te. De onde és?', 'Ótimo! O que gostas de fazer?', 'Ótimo! O que queres praticar?'],
+    followUps: ['Mi chiamo Ana.', 'Vengo dal Portogallo.', 'Mi piace leggere.', 'Voglio praticare italiano.'],
+  },
+  'js-debug': {
+    lines: ['Vamos ver esse código.', 'Qual é o tipo da variável depois dessa operação?', 'Boa observação. E se usarmos Number()?', 'Perfeito. Testa agora com console.log().'],
+    translations: ['Vamos ver esse código.', 'Qual é o tipo da variável depois dessa operação?', 'Boa observação. E se usarmos Number()?', 'Perfeito. Testa agora com console.log().'],
+    followUps: ['O resultado é "23".', 'Porque o + concatena texto.', 'const total = 2 + Number("3");', 'console.log(total);'],
+  },
+  'py-debug': {
+    lines: ['Vamos ver esse código.', 'Que tipo de erro aparece?', 'Boa! Como podes converter o valor?', 'Perfeito. Testa com print().'],
+    translations: ['Vamos ver esse código.', 'Que tipo de erro aparece?', 'Boa! Como podes converter o valor?', 'Perfeito. Testa com print().'],
+    followUps: ['Aparece um TypeError.', 'Não se pode somar int com str.', 'print(str(5) + "3")', 'print("53")'],
+  },
+};
+
+const openersByLanguage: Record<LanguageId, Record<Personality, string>> = {
+  en: { friendly: 'Great! ', patient: 'No problem — take your time. ', formal: 'Thank you. ' },
+  es: { friendly: '¡Genial! ', patient: 'Tranquilo, tienes tiempo. ', formal: 'Gracias. ' },
+  nl: { friendly: 'Goed! ', patient: 'Rustig, neem je tijd. ', formal: 'Dank je. ' },
+  fr: { friendly: 'Super ! ', patient: 'Prends ton temps. ', formal: 'Merci. ' },
+  de: { friendly: 'Super! ', patient: 'Kein Problem, nimm dir Zeit. ', formal: 'Danke. ' },
+  it: { friendly: 'Ottimo! ', patient: 'Tranquillo, prenditi il tuo tempo. ', formal: 'Grazie. ' },
+  javascript: { friendly: 'Bom trabalho! ', patient: 'Sem pressa — vamos passo a passo. ', formal: 'Obrigado. ' },
+  python: { friendly: 'Bom trabalho! ', patient: 'Sem pressa — vamos passo a passo. ', formal: 'Obrigado. ' },
+};
+
 const correctionRules: Array<{ pattern: RegExp; original: string; corrected: string; explanation: string }> = [
   { pattern: /\bi am agree\b/i, original: 'I am agree', corrected: 'I agree', explanation: '“Agree” é um verbo: não precisa de “am”.' },
   { pattern: /\bi have (\d+) years\b/i, original: 'I have … years', corrected: 'I am … years old', explanation: 'Para idade, use “I am … years old”.' },
@@ -87,26 +152,31 @@ export function findCorrections(text: string): GrammarCorrection[] {
   return corrections;
 }
 
-const openers: Record<Personality, string> = {
-  friendly: 'Great! ',
-  patient: 'No problem — take your time. ',
-  formal: 'Thank you. ',
-};
-
-export function offlineReply({ scenarioId, personality, difficulty, userText, turn }: OfflineInput): TutorReply {
-  const scenario = getScenario(scenarioId);
-  const script = scripts[scenarioId] ?? scripts.everyday;
+export function offlineReply({ languageId = 'en', scenarioId, personality, difficulty, userText, turn, supportLocale = 'pt-PT' }: OfflineInput): TutorReply {
+  const scenario = getScenario(scenarioId, languageId);
+  const script = scripts[scenarioId] ?? extraScripts[scenarioId] ?? scripts.everyday;
   const index = Math.min(turn, script.lines.length - 1);
   const goodAnswer = scenario ? evaluateScenarioAnswer(userText, scenario.keywords[Math.min(turn, scenario.keywords.length - 1)]) : userText.trim().length > 3;
-  const encouragement = goodAnswer ? openers[personality] : openers[personality] + 'Let’s try a slightly different way. ';
+  const openers = openersByLanguage[languageId] ?? openersByLanguage.en;
+  const retryHint: Record<LanguageId, string> = {
+    en: 'Let’s try a slightly different way. ',
+    es: 'Probemos de otra forma. ',
+    nl: 'Laten we het anders proberen. ',
+    fr: 'Essayons autrement. ',
+    de: 'Versuchen wir es anders. ',
+    it: 'Proviamo in un altro modo. ',
+    javascript: 'Vamos tentar outra abordagem. ',
+    python: 'Vamos tentar outra abordagem. ',
+  };
+  const encouragement = goodAnswer ? openers[personality] : openers[personality] + (retryHint[languageId] ?? retryHint.en);
   const text = `${encouragement}${script.lines[index]}`;
   const alternatives = [script.followUps[index % script.followUps.length], script.followUps[(index + 1) % script.followUps.length]];
   if (difficulty === 'beginner' && scenario) alternatives.unshift(scenario.modelAnswers[Math.min(turn, scenario.modelAnswers.length - 1)]);
 
   return {
     text,
-    translation: script.translations[index],
+    translation: localizePortuguese(script.translations[index], supportLocale),
     alternatives: [...new Set(alternatives)].slice(0, 3),
-    corrections: findCorrections(userText),
+    corrections: languageId === 'en' ? findCorrections(userText) : [],
   };
 }

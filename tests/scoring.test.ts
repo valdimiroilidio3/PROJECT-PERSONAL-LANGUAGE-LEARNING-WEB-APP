@@ -25,8 +25,8 @@ describe('answer scoring', () => {
     const exercise = {
       type: 'matching',
       pairs: [
-        { english: 'hello', portuguese: 'olá' },
-        { english: 'bread', portuguese: 'pão' },
+        { term: 'hello', translation: 'olá' },
+        { term: 'bread', translation: 'pão' },
       ],
     } as Exercise;
     expect(isExerciseCorrect(exercise, [['hello', 'olá'], ['bread', 'pão']])).toBe(true);

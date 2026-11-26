@@ -1,3 +1,4 @@
+import { isLanguageId } from './languages';
 import type { AppSnapshot, Profile } from './types';
 
 export function createSnapshot(data: Omit<AppSnapshot, 'version' | 'exportedAt'>): AppSnapshot {
@@ -23,10 +24,11 @@ function validateProfile(value: unknown): Profile {
   if (
     typeof value.onboarded !== 'boolean' ||
     value.nativeLanguage !== 'pt' ||
-    value.targetLanguage !== 'en' ||
+    !isLanguageId(value.targetLanguage) ||
     !levels.includes(String(value.level)) ||
     !goals.includes(String(value.goal)) ||
     ![5, 10, 15, 20].includes(Number(value.dailyGoalMinutes)) ||
+    (value.supportLocale !== undefined && !['pt-PT', 'pt-BR'].includes(String(value.supportLocale))) ||
     !isString(value.createdAt)
   ) {
     throw new Error('As preferências do ficheiro não são válidas.');
@@ -51,8 +53,25 @@ export function parseSnapshot(raw: string): AppSnapshot {
     isNumber(item.durationMs) && Array.isArray(item.mistakes))) {
     throw new Error('Existem lições inválidas no ficheiro.');
   }
-  if (!parsed.vocabulary.every((item) =>
-    isObject(item) && isString(item.id) && isString(item.english) && isString(item.portuguese) &&
+  const validLanguage = (value: unknown) => value === undefined || isLanguageId(value);
+  if (!parsed.completions.every((item) => isObject(item) && validLanguage(item.languageId))) {
+    throw new Error('Existem lições inválidas no ficheiro.');
+  }
+  if (!parsed.attempts.every((item) => isObject(item) && validLanguage(item.languageId))) {
+    throw new Error('Existem tentativas inválidas no ficheiro.');
+  }
+  if (!parsed.vocabulary.every((item) => isObject(item) && validLanguage(item.languageId))) {
+    throw new Error('Existe vocabulário inválido no ficheiro.');
+  }
+  if (!parsed.sessions.every((item) => isObject(item) && validLanguage(item.languageId))) {
+    throw new Error('Existem conversas inválidas no ficheiro.');
+  }
+  // Backups created before the multi-language rename used english/portuguese keys.
+  const vocabulary = parsed.vocabulary.map((item) =>
+    isObject(item) ? { ...item, term: item.term ?? item.english, translation: item.translation ?? item.portuguese } : item,
+  );
+  if (!vocabulary.every((item) =>
+    isObject(item) && isString(item.id) && isString(item.term) && isString(item.translation) &&
     isString(item.example) && isString(item.context) && isString(item.nextReviewAt) &&
     isNumber(item.familiarity) && isNumber(item.correctCount) && isNumber(item.incorrectCount))) {
     throw new Error('Existe vocabulário inválido no ficheiro.');
@@ -74,7 +93,7 @@ export function parseSnapshot(raw: string): AppSnapshot {
     profile: validateProfile(parsed.profile),
     completions: parsed.completions as AppSnapshot['completions'],
     attempts: parsed.attempts as AppSnapshot['attempts'],
-    vocabulary: parsed.vocabulary as AppSnapshot['vocabulary'],
+    vocabulary: vocabulary as AppSnapshot['vocabulary'],
     sessions: parsed.sessions as AppSnapshot['sessions'],
   };
 }

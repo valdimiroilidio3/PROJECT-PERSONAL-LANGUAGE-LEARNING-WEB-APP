@@ -3,11 +3,12 @@
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Heart, RotateCcw, Trophy, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Heart, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from './AppContext';
 import { Mascot } from './Mascot';
 import { SpeakControl } from './Speech';
 import { ProgressBar, Tag } from './ui';
+import { levelLabel } from '@/lib/languages';
 import { correctAnswerOf, isExerciseCorrect, accuracyPercent, type SubmittedAnswer } from '@/lib/scoring';
 import type { Exercise, Lesson, LessonMistake } from '@/lib/types';
 
@@ -18,21 +19,39 @@ interface Feedback {
   correctAnswer: string;
 }
 
+interface SkillStat {
+  label: string;
+  correct: number;
+  total: number;
+}
+
 interface Summary {
   xp: number;
   correct: number;
   total: number;
   durationMs: number;
   mistakes: LessonMistake[];
+  skills: SkillStat[];
 }
 
 function answerLabel(answer: SubmittedAnswer): string {
   if (typeof answer === 'string') return answer;
-  return answer.map(([english, portuguese]) => `${english} = ${portuguese}`).join('; ');
+  return answer.map(([term, translation]) => `${term} = ${translation}`).join('; ');
+}
+
+/** Uses the lesson's own vocabulary examples; never invents content. */
+function additionalExample(lesson: Lesson, exercise: Exercise | undefined): string | null {
+  if (!exercise) return null;
+  const target = correctAnswerOf(exercise).toLowerCase();
+  const seed = lesson.vocabulary.find((item) => {
+    const word = item.term.toLowerCase();
+    return target === word || target.includes(word) || item.example.toLowerCase().includes(target);
+  });
+  return seed?.example || null;
 }
 
 export function LessonPlayer({ lesson }: { lesson: Lesson }) {
-  const { recordAttempt, completeLesson } = useApp();
+  const { language, recordAttempt, completeLesson } = useApp();
   const [phase, setPhase] = useState<'intro' | 'playing' | 'summary'>('intro');
   const [index, setIndex] = useState(0);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -42,6 +61,8 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const [selectedEnglish, setSelectedEnglish] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const results = useRef<Record<string, boolean>>({});
+  const pendingAttempts = useRef<Promise<void>[]>([]);
+  const finishing = useRef(false);
   const startedAt = useRef(Date.now());
   const lessonStartedAt = useRef(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,7 +101,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       explanation: exercise.explanation,
       correctAnswer: correctAnswerOf(exercise),
     });
-    void recordAttempt({
+    pendingAttempts.current.push(recordAttempt({
       lessonId: lesson.id,
       exerciseId: exercise.id,
       exerciseType: exercise.type,
@@ -91,25 +112,54 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       durationMs: Math.min(120_000, Date.now() - startedAt.current),
       xpAwarded: 0,
       source: 'lesson',
-    });
+    }));
   };
 
   const finish = async () => {
-    const correct = Object.values(results.current).filter(Boolean).length;
-    const total = lesson.exercises.length;
-    const mistakes: LessonMistake[] = lesson.exercises
-      .filter((item) => results.current[item.id] === false)
-      .map((item) => ({
-        exerciseId: item.id,
-        prompt: item.type === 'reading' || item.type === 'listening' ? item.question : item.prompt,
-        userAnswer: '',
-        correctAnswer: correctAnswerOf(item),
-        explanation: item.explanation,
-      }));
-    const durationMs = Date.now() - lessonStartedAt.current;
-    const xp = await completeLesson({ lesson, correctCount: correct, totalExercises: total, durationMs, mistakes });
-    setSummary({ xp, correct, total, durationMs, mistakes });
-    setPhase('summary');
+    if (finishing.current) return;
+    finishing.current = true;
+    try {
+      await Promise.all(pendingAttempts.current);
+      pendingAttempts.current = [];
+      const correct = Object.values(results.current).filter(Boolean).length;
+      const total = lesson.exercises.length;
+      const mistakes: LessonMistake[] = lesson.exercises
+        .filter((item) => results.current[item.id] === false)
+        .map((item) => ({
+          exerciseId: item.id,
+          prompt: item.type === 'reading' || item.type === 'listening' ? item.question : item.prompt,
+          userAnswer: '',
+          correctAnswer: correctAnswerOf(item),
+          explanation: item.explanation,
+        }));
+      const durationMs = Date.now() - lessonStartedAt.current;
+      const xp = await completeLesson({ lesson, correctCount: correct, totalExercises: total, durationMs, mistakes });
+      const labels: Record<Exercise['type'], string> = {
+        'multiple-choice': 'Escolha',
+        translation: 'Tradução',
+        'word-order': 'Ordem das palavras',
+        matching: 'Associação',
+        'fill-blank': 'Preenchimento',
+        listening: 'Escuta',
+        dialogue: 'Diálogo',
+        sentence: 'Escrita',
+        reading: 'Leitura',
+      };
+      const skillMap = new Map<string, SkillStat>();
+      for (const item of lesson.exercises) {
+        const result = results.current[item.id];
+        if (result === undefined) continue;
+        const label = labels[item.type];
+        const stat = skillMap.get(label) ?? { label, correct: 0, total: 0 };
+        stat.total += 1;
+        if (result) stat.correct += 1;
+        skillMap.set(label, stat);
+      }
+      setSummary({ xp, correct, total, durationMs, mistakes, skills: [...skillMap.values()] });
+      setPhase('summary');
+    } finally {
+      finishing.current = false;
+    }
   };
 
   const next = () => {
@@ -121,6 +171,17 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
     resetExerciseState();
   };
 
+  const retry = () => {
+    if (!feedback || feedback.correct) return;
+    setFeedback(null);
+    setText('');
+    setOrder([]);
+    setMatches({});
+    setSelectedEnglish(null);
+    startedAt.current = Date.now();
+    window.setTimeout(() => inputRef.current?.focus(), 40);
+  };
+
   if (phase === 'intro') {
     return (
       <div className="mx-auto max-w-3xl">
@@ -128,7 +189,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         <div className="card">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <Tag tone="sun">{lesson.cefr} · {lesson.category}</Tag>
+              <Tag tone="sun">{levelLabel(lesson.languageId, lesson.level)} · {lesson.category}</Tag>
               <h1 className="mt-3 text-3xl font-black tracking-tight">{lesson.title}</h1>
               <p className="mt-1 text-sm text-muted">{lesson.subtitle}</p>
             </div>
@@ -146,12 +207,12 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
           <h2 className="mt-7 text-sm font-black">Vocabulário desta lição</h2>
           <div className="mt-3 divide-y divide-line rounded-3xl border border-line">
             {lesson.vocabulary.map((item) => (
-              <div key={item.english} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div key={item.term} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
-                  <p className="font-bold">{item.english} <span className="font-normal text-muted">— {item.portuguese}</span></p>
+                  <p className="font-bold">{item.term} <span className="font-normal text-muted">— {item.translation}</span></p>
                   <p className="mt-0.5 truncate text-xs text-muted">{item.example || item.context}</p>
                 </div>
-                <SpeakControl text={item.english || item.example} compact />
+                {language.speech && <SpeakControl text={item.term || item.example} compact />}
               </div>
             ))}
           </div>
@@ -162,6 +223,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
               startedAt.current = Date.now();
               lessonStartedAt.current = Date.now();
               results.current = {};
+              pendingAttempts.current = [];
               setIndex(0);
               setPhase('playing');
               resetExerciseState();
@@ -193,6 +255,26 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
             <Link href="/review" className="btn-ghost flex-1">Rever vocabulário</Link>
           </div>
         </div>
+
+        <section className="card mt-5 text-left">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Revisão da sessão</p>
+          <h2 className="mt-1 text-lg font-black">O que aconteceu aqui</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {summary.skills.map((skill) => (
+              <div key={skill.label} className="rounded-2xl bg-cream p-3">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span>{skill.label}</span>
+                  <span className="text-muted">{skill.correct}/{skill.total} · {Math.round((skill.correct / skill.total) * 100)}%</span>
+                </div>
+                <div className="mt-2"><ProgressBar value={skill.correct} max={skill.total} color={skill.correct === skill.total ? 'bg-success' : 'bg-sun'} /></div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <p className="text-xs text-muted">{summary.mistakes.length} {summary.mistakes.length === 1 ? 'ponto guardado' : 'pontos guardados'} para revisar mais tarde.</p>
+            <Link href="/review" className="btn-ghost !py-2 text-xs">Ir para revisão <ArrowRight size={14} /></Link>
+          </div>
+        </section>
 
         {summary.mistakes.length > 0 && (
           <section className="card mt-5">
@@ -229,7 +311,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       <motion.div key={exercise.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card">
         <h1 className="text-xl font-black leading-snug">{exercise.prompt}</h1>
 
-        {exercise.type === 'listening' && (
+        {exercise.type === 'listening' && language.speech && (
           <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-cream p-4">
             <SpeakControl text={exercise.audioText} />
             <span className="text-xs text-muted">Ouve quantas vezes quiseres. A velocidade lenta está disponível.</span>
@@ -278,25 +360,25 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         {exercise.type === 'matching' && (
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div>
-              <p className="label">Inglês</p>
+              <p className="label">{language.termLabel}</p>
               {exercise.pairs.map((pair) => {
-                const matched = matches[pair.english];
+                const matched = matches[pair.term];
                 return (
-                  <button key={pair.english} type="button" disabled={!!feedback || !!matched} onClick={() => setSelectedEnglish(pair.english)} className={`mb-2 w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${selectedEnglish === pair.english ? 'border-ink bg-sun-soft' : matched ? 'border-success bg-success-soft' : 'border-line bg-white hover:border-ink/30'}`}>
-                    {pair.english}
+                  <button key={pair.term} type="button" disabled={!!feedback || !!matched} onClick={() => setSelectedEnglish(pair.term)} className={`mb-2 w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${selectedEnglish === pair.term ? 'border-ink bg-sun-soft' : matched ? 'border-success bg-success-soft' : 'border-line bg-white hover:border-ink/30'}`}>
+                    {pair.term}
                   </button>
                 );
               })}
             </div>
             <div>
-              <p className="label">Português</p>
+              <p className="label">{language.translationLabel}</p>
               {shuffledTranslations.map((pair) => (
-                <button key={pair.english} type="button" disabled={!!feedback} onClick={() => {
+                <button key={pair.term} type="button" disabled={!!feedback} onClick={() => {
                   if (!selectedEnglish) return;
-                  setMatches((previous) => ({ ...previous, [selectedEnglish]: pair.portuguese }));
+                  setMatches((previous) => ({ ...previous, [selectedEnglish]: pair.translation }));
                   setSelectedEnglish(null);
                 }} className="mb-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-left text-sm font-bold transition hover:border-ink/30">
-                  {pair.portuguese}
+                  {pair.translation}
                 </button>
               ))}
             </div>
@@ -333,7 +415,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         {(exercise.type === 'translation' || exercise.type === 'sentence' || exercise.type === 'fill-blank') && (
           <form className="mt-5" onSubmit={(event) => { event.preventDefault(); if (text.trim()) submit(text.trim()); }}>
             <label className="label" htmlFor="answer">A tua resposta</label>
-            <input id="answer" ref={inputRef} value={text} onChange={(event) => setText(event.target.value)} disabled={!!feedback} className="input" placeholder="Escreve em inglês…" autoComplete="off" />
+            <input id="answer" ref={inputRef} value={text} onChange={(event) => setText(event.target.value)} disabled={!!feedback} className="input" placeholder={language.kind === 'programming' ? 'Escreve o código…' : `Escreve em ${language.label.toLowerCase()}…`} autoComplete="off" />
             {!feedback && <button type="submit" className="btn-primary mt-4 w-full" disabled={!text.trim()}>Verificar resposta</button>}
           </form>
         )}
@@ -355,9 +437,25 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
             <p className="flex items-center gap-2 font-black">{feedback.correct ? <><CheckCircle2 size={18} className="text-success" /> Correto!</> : <><X size={18} className="text-danger" /> Ainda não é desta</>}</p>
             {!feedback.correct && <p className="mt-2 text-sm">Resposta correta: <strong>{feedback.correctAnswer}</strong></p>}
             <p className="mt-2 text-sm leading-relaxed text-muted">{feedback.explanation}</p>
-            <button type="button" className="btn-primary mt-4 w-full" onClick={next}>
-              {index + 1 === lesson.exercises.length ? 'Ver resultado' : 'Próximo exercício'} <ArrowRight size={16} />
-            </button>
+            {additionalExample(lesson, exercise) && (
+              <p className="mt-2 text-sm">
+                <span className="font-bold">Exemplo da lição:</span>{' '}
+                <span className="text-muted">“{additionalExample(lesson, exercise)}”</span>
+              </p>
+            )}
+            {exercise.type === 'listening' && language.speech && (
+              <p className="mt-2 text-xs text-muted"><span className="font-bold">Transcrição:</span> {exercise.audioText}</p>
+            )}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              {!feedback.correct && (
+                <button type="button" className="btn-ghost flex-1" onClick={retry}>
+                  <RotateCcw size={15} /> Tentar novamente
+                </button>
+              )}
+              <button type="button" className="btn-primary flex-1" onClick={next}>
+                {index + 1 === lesson.exercises.length ? 'Ver resultado' : 'Próximo exercício'} <ArrowRight size={16} />
+              </button>
+            </div>
           </motion.div>
         )}
 

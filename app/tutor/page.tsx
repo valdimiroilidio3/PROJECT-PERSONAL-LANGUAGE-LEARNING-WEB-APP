@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Bot, Check, MessageCircle, Plus, Send, Sparkles } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { Mascot } from '@/components/Mascot';
 import { SpeakControl, SpeechInput } from '@/components/Speech';
 import { PageHeader, Tag } from '@/components/ui';
-import { scenarios } from '@/lib/content/scenarios';
+import { scenariosFor } from '@/lib/content';
+import { levelLabel } from '@/lib/languages';
 import { offlineReply, type Personality, type TutorMode, type TutorReply } from '@/lib/tutor/offline';
-import type { GrammarCorrection, LearnerLevel, TutorMessage, TutorSession } from '@/lib/types';
+import type { SupportLocale } from '@/lib/tutor/validation';
+import type { LearnerLevel, PracticeScenario, TutorMessage, TutorSession } from '@/lib/types';
 
 const personalities: { id: Personality; label: string; description: string }[] = [
   { id: 'friendly', label: 'Amigável', description: 'Leve e incentivador' },
@@ -34,10 +36,12 @@ function summarize(messages: TutorMessage[], scenarioTitle: string): string {
 }
 
 export default function TutorPage() {
-  const { profile, sessions, saveSession, recordAttempt } = useApp();
-  const [scenarioId, setScenarioId] = useState('introduce-yourself');
+  const { profile, language, sessions, saveSession, recordAttempt, updateProfile } = useApp();
+  const scenarios = useMemo(() => scenariosFor(profile.targetLanguage), [profile.targetLanguage]);
+  const [scenarioId, setScenarioId] = useState('');
   const [personality, setPersonality] = useState<Personality>('friendly');
   const [difficulty, setDifficulty] = useState<LearnerLevel>(profile.level);
+  const [supportLocale, setSupportLocale] = useState<SupportLocale>(profile.supportLocale ?? 'pt-PT');
   const [mode, setMode] = useState<TutorMode>('offline');
   const [remoteModes, setRemoteModes] = useState<TutorMode[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -49,6 +53,13 @@ export default function TutorPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scenario = scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
+
+  useEffect(() => {
+    setMessages([]);
+    setActiveId(null);
+    setError(null);
+    setScenarioId(scenarios[0]?.id ?? '');
+  }, [profile.targetLanguage, scenarios]);
 
   useEffect(() => {
     void fetch('/api/tutor')
@@ -81,11 +92,13 @@ export default function TutorPage() {
     let reply: TutorReply;
     if (chosenMode === 'offline') {
       reply = offlineReply({
+        languageId: profile.targetLanguage,
         scenarioId,
         personality,
         difficulty,
         userText: text,
         turn: nextMessages.filter((item) => item.role === 'user').length - 1,
+        supportLocale,
       });
     } else {
       const response = await fetch('/api/tutor', {
@@ -93,9 +106,11 @@ export default function TutorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: chosenMode,
+          languageId: profile.targetLanguage,
           scenarioId,
           personality,
           difficulty,
+          supportLocale,
           messages: nextMessages.filter((item) => item.provider !== 'offline').map((item) => ({ role: item.role === 'user' ? 'user' : 'assistant', content: item.text })),
         }),
       });
@@ -173,6 +188,11 @@ export default function TutorPage() {
     }
   };
 
+  const changeSupportLocale = (value: SupportLocale) => {
+    setSupportLocale(value);
+    void updateProfile({ supportLocale: value });
+  };
+
   const openSession = (session: TutorSession) => {
     setActiveId(session.id);
     setMessages(session.messages);
@@ -196,7 +216,7 @@ export default function TutorPage() {
     <div>
       <PageHeader
         eyebrow="Conversação guiada"
-        title="Tutor de inglês"
+        title={`Tutor de ${language.label.toLowerCase()}`}
         description="Conversa sobre situações reais, recebe sugestões e vê correções em português. Funciona sem API; podes ativar um modelo local se quiseres."
         action={<button type="button" onClick={startNew} className="btn-primary"><Plus size={16} /> Nova conversa</button>}
       />
@@ -209,14 +229,21 @@ export default function TutorPage() {
         </div>
       )}
 
+      {mode !== 'offline' && (
+        <div className="mb-5 rounded-2xl border border-sun bg-sun-soft p-4 text-sm" role="note">
+          <p className="font-black">Este modo utiliza um serviço externo.</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">A conversa é enviada para o modelo configurado no servidor. Não introduzas dados pessoais. O modo offline continua disponível sem ligação à Internet.</p>
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-[270px_1fr]">
         <aside className="space-y-4">
           <details className="card lg:hidden" open={sessions.length === 0}>
             <summary className="cursor-pointer text-sm font-black">Definições e histórico</summary>
-            <div className="mt-4"><SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} /></div>
+            <div className="mt-4"><SetupPanel {...{ scenarios, scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} /></div>
           </details>
           <div className="hidden space-y-4 lg:block">
-            <SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} />
+            <SetupPanel {...{ scenarios, scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} />
           </div>
         </aside>
 
@@ -310,12 +337,15 @@ export default function TutorPage() {
 }
 
 interface SetupProps {
+  scenarios: PracticeScenario[];
   scenarioId: string;
   setScenarioId: (value: string) => void;
   personality: Personality;
   setPersonality: (value: Personality) => void;
   difficulty: LearnerLevel;
   setDifficulty: (value: LearnerLevel) => void;
+  supportLocale: SupportLocale;
+  setSupportLocale: (value: SupportLocale) => void;
   mode: TutorMode;
   setMode: (value: TutorMode) => void;
   remoteModes: TutorMode[];
@@ -325,7 +355,7 @@ interface SetupProps {
   setShowSetup: (value: boolean) => void;
 }
 
-function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }: SetupProps) {
+function SetupPanel({ scenarios, scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }: SetupProps) {
   return (
     <>
       {showSetup && (
@@ -333,7 +363,7 @@ function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, di
           <div>
             <p className="label">Situação</p>
             <select className="input" value={scenarioId} onChange={(event) => setScenarioId(event.target.value)} aria-label="Situação do tutor">
-              {scenarios.map((item) => <option key={item.id} value={item.id}>{item.title} · {item.cefr}</option>)}
+              {scenarios.map((item) => <option key={item.id} value={item.id}>{item.title} · {levelLabel(item.languageId, item.level)}</option>)}
             </select>
           </div>
           <div className="mt-4">
@@ -351,6 +381,13 @@ function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, di
             <p className="label">Dificuldade</p>
             <select className="input" value={difficulty} onChange={(event) => setDifficulty(event.target.value as LearnerLevel)} aria-label="Dificuldade do tutor">
               {difficulties.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+            </select>
+          </div>
+          <div className="mt-4">
+            <label className="label" htmlFor="support-locale">Português de apoio</label>
+            <select id="support-locale" className="input" value={supportLocale} onChange={(event) => setSupportLocale(event.target.value as SupportLocale)}>
+              <option value="pt-PT">Português europeu</option>
+              <option value="pt-BR">Português brasileiro</option>
             </select>
           </div>
           <div className="mt-4">

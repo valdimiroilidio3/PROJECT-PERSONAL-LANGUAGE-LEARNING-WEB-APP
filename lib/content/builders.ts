@@ -1,5 +1,6 @@
 import type {
-  CEFR,
+  LanguageId,
+  LessonLevel,
   Exercise,
   MatchingPair,
   VocabularySeed,
@@ -15,24 +16,24 @@ export interface LessonMeta {
   title: string;
   subtitle: string;
   objective: string;
-  cefr: CEFR;
+  level: LessonLevel;
   category: string;
   minutes: number;
   xp: number;
   vocabulary: VocabularySeed[];
 }
 
-export function createLesson(meta: LessonMeta, drafts: ExerciseDraft[]) {
+export function createLesson(meta: LessonMeta, drafts: ExerciseDraft[], languageId: LanguageId = 'en') {
   const exercises = drafts.map((draft, index) => ({
     ...draft(`${meta.id}-e${index + 1}`),
     id: `${meta.id}-e${index + 1}`,
     category: meta.category,
   })) as Exercise[];
-  return { ...meta, exercises };
+  return { ...meta, languageId, exercises };
 }
 
-export function v(english: string, portuguese: string, example: string, context: string): VocabularySeed {
-  return { english, portuguese, example, context };
+export function v(term: string, translation: string, example: string, context: string): VocabularySeed {
+  return { term, translation, example, context };
 }
 
 export function mc(question: string, options: string[], correctIndex: number, explanation: string, translation?: string): ExerciseDraft;
@@ -81,7 +82,7 @@ export function word(words: string[], answer: string, explanation: string, alter
 export function match(pairs: MatchingPair[], explanation: string): ExerciseDraft {
   return () => ({
     type: 'matching',
-    prompt: 'Associe cada palavra em inglês à sua tradução.',
+    prompt: 'Associe cada termo à sua explicação.',
     pairs,
     explanation,
   });

@@ -5,9 +5,10 @@ import { useApp } from '@/components/AppContext';
 import { EmptyState, PageHeader, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
 import { deriveAchievements, deriveAnalytics } from '@/lib/analytics';
 import { accuracyPercent } from '@/lib/scoring';
+import { getLesson } from '@/lib/content';
 
 export default function ProgressPage() {
-  const { completions, attempts, vocabulary, sessions } = useApp();
+  const { language, completions, attempts, vocabulary, sessions } = useApp();
   const analytics = deriveAnalytics(completions, attempts, vocabulary);
   const reviewCount = attempts.filter((item) => item.source === 'review').length;
   const achievements = deriveAchievements(analytics, reviewCount, sessions.length);
@@ -17,7 +18,7 @@ export default function ProgressPage() {
     <div>
       <PageHeader
         eyebrow="Estatísticas reais"
-        title="O teu progresso"
+        title={`O teu progresso em ${language.label.toLowerCase()}`}
         description="Tudo o que vês aqui vem das tuas lições, respostas e revisões guardadas neste browser."
       />
 
@@ -90,6 +91,30 @@ export default function ProgressPage() {
         </div>
       </section>
 
+      <section className="mt-8">
+        <SectionTitle title="Histórico de sessões" />
+        {completions.length === 0 ? (
+          <EmptyState title="Ainda sem sessões guardadas" description="As lições concluídas aparecem aqui com data, precisão e XP recebido." />
+        ) : (
+          <div className="card divide-y divide-line !p-0">
+            {[...completions]
+              .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+              .slice(0, 6)
+              .map((completion) => (
+                <div key={completion.lessonId} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                  <div>
+                    <p className="font-extrabold">{getLesson(completion.lessonId)?.title ?? completion.lessonId}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {new Date(completion.completedAt).toLocaleDateString('pt-PT')} · {accuracyPercent(completion.correctCount, completion.totalExercises)}% de acerto · {completion.mistakes.length} {completion.mistakes.length === 1 ? 'erro' : 'erros'}
+                    </p>
+                  </div>
+                  <Tag tone={completion.xpAwarded > 0 ? 'sun' : 'neutral'}>{completion.xpAwarded} XP</Tag>
+                </div>
+              ))}
+          </div>
+        )}
+      </section>
+
       <section className="mt-8 grid gap-6 lg:grid-cols-2">
         <div>
           <SectionTitle title="Erros mais repetidos" />
@@ -110,7 +135,7 @@ export default function ProgressPage() {
           <SectionTitle title="O que estes números significam" />
           <div className="card space-y-3 text-sm leading-relaxed text-muted">
             <p className="flex gap-2"><Info size={17} className="mt-0.5 shrink-0 text-muted" /> A precisão inclui todas as respostas guardadas, incluindo revisões e tutor. A taxa de acerto de uma lição específica é mostrada no fim dela.</p>
-            <p>As estatísticas medem <strong className="text-ink">prática</strong>, não um nível CEFR formal. Os rótulos A1, A2 e B1 indicam apenas a dificuldade do conteúdo das lições.</p>
+            <p>As estatísticas medem <strong className="text-ink">prática</strong>, não um nível oficial. {language.kind === 'programming' ? 'Os rótulos de dificuldade indicam apenas a complexidade do código.' : 'Os rótulos A1, A2 e B1 indicam apenas a dificuldade do conteúdo das lições.'}</p>
             <p>Para uma avaliação certificada é necessário um exame externo; esta aplicação não emite certificados.</p>
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="rounded-2xl bg-cream p-3"><p className="text-xs text-muted">Respostas corretas</p><p className="text-lg font-black">{accuracyPercent(attempts.filter((item) => item.correct).length, attempts.length)}%</p></div>
