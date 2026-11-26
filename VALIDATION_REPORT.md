@@ -72,3 +72,9 @@ O catálogo passou a ter oito percursos independentes: inglês (16 lições), es
 ## Automações
 
 `npm run typecheck`, `npm run lint`, `npm test` e `npm run build` terminaram com código 0. A suíte ficou com 13 ficheiros e 40 testes, incluindo isolamento de progresso entre inglês, espanhol e JavaScript e validação do catálogo completo.
+
+### Publicação da versão multilingual
+
+- Deploy de produção: `dpl_Bzxyji8bg97Qhtcma8NmPb1piZ9Z`, commit `f77ab59`, estado `READY`, alias **https://lumio-english.vercel.app**.
+- Variáveis de ambiente: nenhuma (`envs: []`). `GET /api/tutor` em produção continuou a devolver `modes: []`.
+- Verificação em produção: `/` e `/onboarding` renderizam as oito opções de aprendizagem e o título genérico “Lumio — Aprende todos os dias”.
