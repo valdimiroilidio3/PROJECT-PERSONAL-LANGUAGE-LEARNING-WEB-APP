@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SRS_INTERVALS, intervalForFamiliarity, isOverdue, reviewVocabulary, reviewPriority } from '../lib/srs';
+import { SRS_INTERVALS, intervalForFamiliarity, isOverdue, masteryStatus, reviewVocabulary, reviewPriority } from '../lib/srs';
 import type { VocabularyItem } from '../lib/types';
 
 const item = (overrides: Partial<VocabularyItem> = {}): VocabularyItem => ({
@@ -26,6 +26,8 @@ describe('spaced repetition', () => {
     const reviewed = reviewVocabulary(item(), 'good', now);
     expect(reviewed.familiarity).toBe(1);
     expect(reviewed.correctCount).toBe(1);
+    expect(reviewed.history).toHaveLength(1);
+    expect(reviewed.history?.[0]).toMatchObject({ quality: 'good', familiarityAfter: 1, intervalDays: 2 });
     expect(new Date(reviewed.nextReviewAt).getTime() - now.getTime()).toBe(2 * 24 * 60 * 60 * 1000);
   });
 
@@ -35,6 +37,12 @@ describe('spaced repetition', () => {
     expect(reviewed.familiarity).toBe(3);
     expect(reviewed.incorrectCount).toBe(2);
     expect(new Date(reviewed.nextReviewAt).getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
+  });
+
+  it('maps familiarity and accuracy to transparent mastery states', () => {
+    expect(masteryStatus(item())).toBe('new');
+    expect(masteryStatus(item({ familiarity: 2, correctCount: 1 }))).toBe('learning');
+    expect(masteryStatus(item({ familiarity: 5 }))).toBe('mastered');
   });
 
   it('prioritises overdue and frequently missed words', () => {

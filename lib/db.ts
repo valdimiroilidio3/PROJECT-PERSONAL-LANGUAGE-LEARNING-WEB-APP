@@ -51,6 +51,11 @@ function openDatabase(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
+/** Switch to session-only storage when a write fails; never presented as durable storage. */
+export function markMemoryMode(): void {
+  mode = 'memory';
+}
+
 export async function getStorageMode(): Promise<StorageMode> {
   if (mode === 'memory') return 'memory';
   try {
@@ -128,6 +133,41 @@ export async function clearStore(store: StoreName): Promise<void> {
     const request = db.transaction(store, 'readwrite').objectStore(store).clear();
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error(`Could not clear ${store}.`));
+  });
+}
+
+export interface SnapshotRecords {
+  profile: unknown;
+  completions: unknown[];
+  attempts: unknown[];
+  vocabulary: unknown[];
+  sessions: unknown[];
+}
+
+/** Replaces all local data in one transaction so a failed import cannot leave a partial restore. */
+export async function replaceAll(data: SnapshotRecords): Promise<void> {
+  if (await getStorageMode() === 'memory') {
+    for (const store of STORES) memory[store].clear();
+    memory.kv.set('profile', { key: 'profile', value: data.profile });
+    for (const item of data.completions) memory.completions.set(String((item as { lessonId: string }).lessonId), item);
+    for (const item of data.attempts) memory.attempts.set(memoryKey('attempts', item), item);
+    for (const item of data.vocabulary) memory.vocabulary.set(memoryKey('vocabulary', item), item);
+    for (const item of data.sessions) memory.sessions.set(memoryKey('sessions', item), item);
+    return;
+  }
+
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORES, 'readwrite');
+    for (const store of STORES) transaction.objectStore(store).clear();
+    transaction.objectStore('kv').put({ key: 'profile', value: data.profile });
+    for (const item of data.completions) transaction.objectStore('completions').put(item);
+    for (const item of data.attempts) transaction.objectStore('attempts').put(item);
+    for (const item of data.vocabulary) transaction.objectStore('vocabulary').put(item);
+    for (const item of data.sessions) transaction.objectStore('sessions').put(item);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error('Could not replace local data.'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Data replacement was aborted.'));
   });
 }
 

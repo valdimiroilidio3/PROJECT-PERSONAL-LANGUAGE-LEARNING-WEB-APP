@@ -36,7 +36,8 @@ npm start
 | `npm run build` | Creates an optimized production build |
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
-| `npm test` | Runs the unit tests (scoring, XP, analytics, spaced repetition, practice) |
+| `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
+| `npm test` | Runs unit and integration tests (scoring, XP, analytics, spaced repetition, backup, IndexedDB, full lesson flow) |
 
 ## What is included
 
@@ -44,11 +45,12 @@ npm start
 - **Nine exercise formats**: multiple choice, translation, word ordering, matching, fill-in-the-blank, listening, dialogue completion, sentence construction and reading comprehension.
 - **Lesson engine** with instant feedback, hearts as gentle feedback (never a hard lock), first-completion XP only, mistake review and a completion summary.
 - **Vocabulary notebook** with automatic import from lessons, manual entries, search, filters and editing.
-- **Spaced repetition** with increasing intervals (1, 2, 4, 7, 15, 30, 60, 120 days), priority for new/overdue/frequently missed words and four review grades.
+- **Spaced repetition** with transparent intervals (1, 2, 4, 7, 15, 30, 60, 120 days), priority for new/overdue/frequently missed words, four review grades, per-word history and explicit mastery states.
 - **Speech service** using the Web Speech API: English voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed.
 - **Real-life practice** with eight scenarios and keyword-based answer feedback.
-- **Tutor** with offline structured dialogues, three personalities, four difficulty levels, suggested responses, corrections, natural alternatives, session history and summaries.
-- **Gamification** derived only from saved activity: XP, levels, daily goals, streaks, achievements, weekly calendar and personal bests.
+- **Tutor** with offline structured dialogues, three personalities, four difficulty levels, European/Brazilian Portuguese support, suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in.
+- **Gamification and analytics** derived only from saved activity: XP, levels, daily goals, streaks, achievements, weekly calendar, session history and personal bests.
+- **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.
 
@@ -118,6 +120,14 @@ tests/               Unit tests
 3. No environment variables are required for the offline app. Add only the optional provider variables shown above if you want remote tutor modes.
 4. Deploy. The app is statically rendered where possible and uses a single Node.js API route for the optional tutor adapters.
 
+## Offline resources
+
+Fonts use the local system/Inter stack (no Google Fonts request), the mascot is an inline SVG, icons are bundled from `lucide-react`, and lessons/scenarios are TypeScript data in `lib/content/`. The learning flow makes no network requests. Only the optional tutor adapters in `app/api/tutor/route.ts` can reach external endpoints, and they are disabled unless environment variables are configured.
+
+## Design system
+
+See `DESIGN_SYSTEM.md` for the documented colour, typography, spacing, radius, elevation, motion and component tokens used by the existing Tailwind setup.
+
 ## Design notes
 
 The visual system uses yellow `#FFE500`, warm cream `#F7F5EF`, dark ink `#20201D`, soft green success states and warm red errors with Inter/system typography, rounded cards and restrained Framer Motion transitions. The mascot, name, illustrations and layouts are original to this project and are not copies of any reference app.
@@ -127,3 +137,5 @@ The visual system uses yellow `#FFE500`, warm cream `#F7F5EF`, dark ink `#20201D
 - Speech recognition quality depends on the browser, microphone permissions and accent; it is presented for confirmation, not as pronunciation scoring.
 - CEFR labels describe lesson content difficulty. The app does not issue assessed CEFR levels or certificates.
 - AI feedback is learning assistance, not guaranteed linguistic assessment.
+- Remote tutor rate limiting is per server process; serverless platforms may run several instances.
+- The full lesson flow is covered by an integration test with simulated IndexedDB; speech recognition and real-browser reload are not automated here.

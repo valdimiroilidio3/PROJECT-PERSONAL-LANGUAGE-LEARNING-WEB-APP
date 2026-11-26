@@ -102,6 +102,13 @@ export default function SettingsPage() {
               </select>
             </div>
             <div>
+              <label className="label" htmlFor="support-locale">Português de apoio</label>
+              <select id="support-locale" className="input" value={profile.supportLocale ?? 'pt-PT'} onChange={(event) => void updateProfile({ supportLocale: event.target.value as 'pt-PT' | 'pt-BR' })}>
+                <option value="pt-PT">Português europeu</option>
+                <option value="pt-BR">Português brasileiro</option>
+              </select>
+            </div>
+            <div>
               <label className="label" htmlFor="minutes">Meta diária</label>
               <select id="minutes" className="input" value={profile.dailyGoalMinutes} onChange={(event) => void updateProfile({ dailyGoalMinutes: Number(event.target.value) as 5 | 10 | 15 | 20 })}>
                 {[5, 10, 15, 20].map((value) => <option key={value} value={value}>{value} minutos/dia</option>)}

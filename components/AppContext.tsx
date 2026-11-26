@@ -1,7 +1,19 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { clearStore, deleteRecord, describeStorageError, getAll, getStorageMode, putRecord, readKv, writeKv, type StorageMode } from '@/lib/db';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  deleteRecord,
+  describeStorageError,
+  getAll,
+  getRecord,
+  getStorageMode,
+  markMemoryMode,
+  putRecord,
+  readKv,
+  replaceAll,
+  writeKv,
+  type StorageMode,
+} from '@/lib/db';
 import { calculateLessonXp } from '@/lib/scoring';
 import { vocabularyFromLesson } from '@/lib/vocabulary';
 import type {
@@ -22,6 +34,7 @@ export const defaultProfile: Profile = {
   level: 'beginner',
   goal: 'everyday',
   dailyGoalMinutes: 10,
+  supportLocale: 'pt-PT',
   createdAt: new Date().toISOString(),
 };
 
@@ -72,8 +85,31 @@ const initialState: AppState = {
   error: null,
 };
 
+function uniqueBy<T>(items: T[], keyOf: (item: T) => string | number): T[] {
+  const seen = new Map<string | number, T>();
+  for (const item of items) seen.set(keyOf(item), item);
+  return [...seen.values()];
+}
+
+/** Imported backups may contain repeated ids; normalise before replacing local data. */
+function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
+  const attempts = snapshot.attempts.map((attempt, index) => ({
+    ...attempt,
+    id: typeof attempt.id === 'number' && Number.isFinite(attempt.id) ? attempt.id : index + 1,
+  }));
+  return {
+    ...snapshot,
+    completions: uniqueBy(snapshot.completions, (item) => item.lessonId),
+    attempts: uniqueBy(attempts, (item) => item.id as number),
+    vocabulary: uniqueBy(snapshot.vocabulary, (item) => item.id),
+    sessions: uniqueBy(snapshot.sessions, (item) => item.id),
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
+  const completingLessons = useRef(new Set<string>());
+  const attemptSequence = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -118,7 +154,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       await operation();
     } catch (error) {
-      setState((previous) => ({ ...previous, error: `Não foi possível guardar: ${describeStorageError(error)}` }));
+      const detail = describeStorageError(error);
+      markMemoryMode();
+      setState((previous) => ({
+        ...previous,
+        storageMode: 'memory',
+        error: `Não foi possível guardar no armazenamento local (${detail}). O progresso desta sessão fica apenas em memória; exporta um backup antes de fechar.`,
+      }));
+      try {
+        await operation();
+      } catch (retryError) {
+        setState((previous) => ({ ...previous, error: `Não foi possível guardar: ${describeStorageError(retryError)}` }));
+      }
     }
   }, []);
 
@@ -133,9 +180,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const recordAttempt = useCallback(
     async (input: Omit<Attempt, 'id' | 'timestamp'>) => {
+      attemptSequence.current += 1;
       const attempt: Attempt = {
         ...input,
-        id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
+        id: Date.now() * 1000 + (attemptSequence.current % 1000),
         timestamp: new Date().toISOString(),
       };
       await persist(() => putRecord('attempts', attempt));
@@ -146,35 +194,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const completeLesson = useCallback(
     async ({ lesson, correctCount, totalExercises, durationMs, mistakes }: CompleteLessonInput) => {
-      const alreadyCompleted = state.completions.some((item) => item.lessonId === lesson.id);
-      if (alreadyCompleted) return 0;
-      const xpAwarded = calculateLessonXp({
-        totalExercises,
-        correctCount,
-        firstCompletion: true,
-      });
-      const completion: LessonCompletion = {
-        lessonId: lesson.id,
-        completedAt: new Date().toISOString(),
-        correctCount,
-        totalExercises,
-        xpAwarded,
-        durationMs,
-        mistakes,
-      };
-      await persist(async () => {
-        await putRecord('completions', completion);
-        for (const item of vocabularyFromLesson(lesson)) await putRecord('vocabulary', item);
-      });
-      setState((previous) => ({
-        ...previous,
-        completions: [...previous.completions, completion],
-        vocabulary: [
-          ...previous.vocabulary,
-          ...vocabularyFromLesson(lesson).filter((item) => !previous.vocabulary.some((existing) => existing.id === item.id)),
-        ],
-      }));
-      return xpAwarded;
+      if (completingLessons.current.has(lesson.id)) return 0;
+      completingLessons.current.add(lesson.id);
+      try {
+        const stored = await getRecord<LessonCompletion>('completions', lesson.id).catch(() => undefined);
+        if (stored || state.completions.some((item) => item.lessonId === lesson.id)) return 0;
+
+        const xpAwarded = calculateLessonXp({ totalExercises, correctCount, firstCompletion: true });
+        const completion: LessonCompletion = {
+          lessonId: lesson.id,
+          completedAt: new Date().toISOString(),
+          correctCount,
+          totalExercises,
+          xpAwarded,
+          durationMs,
+          mistakes,
+        };
+        const newWords = vocabularyFromLesson(lesson);
+        await persist(async () => {
+          await putRecord('completions', completion);
+          for (const item of newWords) await putRecord('vocabulary', item);
+        });
+        setState((previous) => {
+          if (previous.completions.some((item) => item.lessonId === lesson.id)) return previous;
+          return {
+            ...previous,
+            completions: [...previous.completions, completion],
+            vocabulary: [
+              ...previous.vocabulary,
+              ...newWords.filter((item) => !previous.vocabulary.some((existing) => existing.id === item.id)),
+            ],
+          };
+        });
+        return xpAwarded;
+      } finally {
+        completingLessons.current.delete(lesson.id);
+      }
     },
     [persist, state.completions],
   );
@@ -225,15 +280,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const importSnapshot = useCallback(
-    async (snapshot: AppSnapshot) => {
-      await persist(async () => {
-        for (const store of ['completions', 'attempts', 'vocabulary', 'sessions'] as const) await clearStore(store);
-        await writeKv('profile', snapshot.profile);
-        for (const item of snapshot.completions) await putRecord('completions', item);
-        for (const item of snapshot.attempts) await putRecord('attempts', item);
-        for (const item of snapshot.vocabulary) await putRecord('vocabulary', item);
-        for (const item of snapshot.sessions) await putRecord('sessions', item);
-      });
+    async (rawSnapshot: AppSnapshot) => {
+      const snapshot = normalizeSnapshot(rawSnapshot);
+      await persist(() => replaceAll({
+        profile: snapshot.profile,
+        completions: snapshot.completions,
+        attempts: snapshot.attempts,
+        vocabulary: snapshot.vocabulary,
+        sessions: snapshot.sessions,
+      }));
       setState((previous) => ({
         ...previous,
         profile: snapshot.profile,
@@ -247,10 +302,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const resetAll = useCallback(async () => {
-    await persist(async () => {
-      for (const store of ['kv', 'completions', 'attempts', 'vocabulary', 'sessions'] as const) await clearStore(store);
-      await writeKv('profile', defaultProfile);
-    });
+    await persist(() => replaceAll({
+      profile: defaultProfile,
+      completions: [],
+      attempts: [],
+      vocabulary: [],
+      sessions: [],
+    }));
     setState((previous) => ({
       ...previous,
       profile: defaultProfile,
@@ -279,7 +337,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
-
 
 export function useApp(): AppContextValue {
   const context = useContext(AppContext);

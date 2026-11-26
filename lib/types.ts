@@ -21,6 +21,7 @@ export interface Profile {
   dailyGoalMinutes: 5 | 10 | 15 | 20;
   diagnosticScore?: number;
   recommendedLessonId?: string;
+  supportLocale?: 'pt-PT' | 'pt-BR';
   createdAt: string;
 }
 
@@ -161,6 +162,16 @@ export interface LessonCompletion {
   mistakes: LessonMistake[];
 }
 
+export type ReviewQuality = 'again' | 'hard' | 'good' | 'easy';
+export type MasteryStatus = 'new' | 'learning' | 'mastered';
+
+export interface ReviewEvent {
+  timestamp: string;
+  quality: ReviewQuality;
+  familiarityAfter: number;
+  intervalDays: number;
+}
+
 export interface VocabularyItem extends VocabularySeed {
   id: string;
   familiarity: number;
@@ -171,6 +182,8 @@ export interface VocabularyItem extends VocabularySeed {
   source: 'lesson' | 'manual';
   lessonId?: string;
   createdAt: string;
+  /** Optional so backups created before 2.0 remain valid. */
+  history?: ReviewEvent[];
 }
 
 export interface GrammarCorrection {

@@ -5,6 +5,7 @@ import { useApp } from '@/components/AppContext';
 import { EmptyState, PageHeader, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
 import { deriveAchievements, deriveAnalytics } from '@/lib/analytics';
 import { accuracyPercent } from '@/lib/scoring';
+import { getLesson } from '@/lib/content';
 
 export default function ProgressPage() {
   const { completions, attempts, vocabulary, sessions } = useApp();
@@ -88,6 +89,30 @@ export default function ProgressPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <SectionTitle title="Histórico de sessões" />
+        {completions.length === 0 ? (
+          <EmptyState title="Ainda sem sessões guardadas" description="As lições concluídas aparecem aqui com data, precisão e XP recebido." />
+        ) : (
+          <div className="card divide-y divide-line !p-0">
+            {[...completions]
+              .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+              .slice(0, 6)
+              .map((completion) => (
+                <div key={completion.lessonId} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                  <div>
+                    <p className="font-extrabold">{getLesson(completion.lessonId)?.title ?? completion.lessonId}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {new Date(completion.completedAt).toLocaleDateString('pt-PT')} · {accuracyPercent(completion.correctCount, completion.totalExercises)}% de acerto · {completion.mistakes.length} {completion.mistakes.length === 1 ? 'erro' : 'erros'}
+                    </p>
+                  </div>
+                  <Tag tone={completion.xpAwarded > 0 ? 'sun' : 'neutral'}>{completion.xpAwarded} XP</Tag>
+                </div>
+              ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">

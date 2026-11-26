@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 import {
   ArrowRight,
   BookOpen,
@@ -9,7 +10,6 @@ import {
   Flame,
   Lock,
   Sparkles,
-  Target,
   Trophy,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -17,14 +17,19 @@ import { Mascot } from '@/components/Mascot';
 import { useApp } from '@/components/AppContext';
 import { EmptyState, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
 import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/lib/analytics';
+import { getNextStep } from '@/lib/recommendations';
 import { lessons } from '@/lib/content';
 import { scenarios } from '@/lib/content/scenarios';
 import { isOverdue } from '@/lib/srs';
 
 export default function DashboardPage() {
   const { profile, completions, attempts, vocabulary } = useApp();
-  const analytics = deriveAnalytics(completions, attempts, vocabulary);
-  const recommended = recommendLesson(profile, lessons, completions);
+  const analytics = useMemo(() => deriveAnalytics(completions, attempts, vocabulary), [completions, attempts, vocabulary]);
+  const recommended = useMemo(() => recommendLesson(profile, lessons, completions), [profile, completions]);
+  const nextStep = useMemo(
+    () => getNextStep({ analytics, profile, lessons, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary],
+  );
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
   const hour = new Date().getHours();
@@ -72,11 +77,27 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile label="Sequência" value={`${analytics.streak} dias`} hint="Dias consecutivos com atividade" icon={<Flame size={17} className="text-danger" />} />
-        <StatTile label="XP total" value={analytics.totalXp} hint="Ganho em lições e prática" icon={<Trophy size={17} className="text-sun-deep" />} />
+        <StatTile label="XP total" value={analytics.totalXp} hint="Lições, prática e revisões" icon={<Trophy size={17} className="text-sun-deep" />} />
+        <StatTile label="Estudo" value={`${analytics.studyMinutes} min`} hint="Tempo guardado nas sessões" icon={<Clock3 size={17} className="text-muted" />} />
         <StatTile label="Lições" value={analytics.completedLessons} hint={`de ${lessons.length} disponíveis`} icon={<CheckCircle2 size={17} className="text-success" />} />
+        <StatTile label="Precisão" value={`${analytics.accuracy}%`} hint={`${analytics.totalAttempts} respostas`} icon={<CheckCircle2 size={17} className="text-success" />} />
         <StatTile label="Palavras" value={vocabulary.length} hint={`${overdue.length} para revisar`} icon={<BookOpen size={17} className="text-muted" />} />
+      </section>
+
+      <section className="rounded-4xl border border-line bg-white p-5 shadow-card sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-muted">O teu próximo passo</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">{nextStep.title}</h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted">{nextStep.description}</p>
+            <p className="mt-3 text-xs text-muted">Regra aplicada: {nextStep.reason}</p>
+          </div>
+          <Link href={nextStep.href} className="btn-primary">
+            {nextStep.cta} <ArrowRight size={16} />
+          </Link>
+        </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">

@@ -27,6 +27,7 @@ function validateProfile(value: unknown): Profile {
     !levels.includes(String(value.level)) ||
     !goals.includes(String(value.goal)) ||
     ![5, 10, 15, 20].includes(Number(value.dailyGoalMinutes)) ||
+    (value.supportLocale !== undefined && !['pt-PT', 'pt-BR'].includes(String(value.supportLocale))) ||
     !isString(value.createdAt)
   ) {
     throw new Error('As preferências do ficheiro não são válidas.');

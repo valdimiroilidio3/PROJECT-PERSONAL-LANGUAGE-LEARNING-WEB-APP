@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle2, Eye, Lightbulb, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { SpeechInput, SpeakControl } from '@/components/Speech';
-import { EmptyState, PageHeader, ProgressBar, Tag } from '@/components/ui';
+import { PageHeader, ProgressBar, Tag } from '@/components/ui';
 import { scenarios } from '@/lib/content/scenarios';
 import { evaluateScenarioAnswer, scenarioXp } from '@/lib/practice';
 

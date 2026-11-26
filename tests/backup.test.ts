@@ -24,5 +24,6 @@ describe('backup validation', () => {
     const snapshot = createSnapshot({ profile, completions: [], attempts: [], vocabulary: [], sessions: [] });
     expect(() => parseSnapshot(JSON.stringify({ ...snapshot, vocabulary: [{ id: 'x' }] }))).toThrow(/vocabulário/);
     expect(() => parseSnapshot(JSON.stringify({ ...snapshot, profile: { ...profile, level: 'wizard' } }))).toThrow(/preferências/);
+    expect(() => parseSnapshot(JSON.stringify({ ...snapshot, profile: { ...profile, supportLocale: 'pt-XX' } }))).toThrow(/preferências/);
   });
 });

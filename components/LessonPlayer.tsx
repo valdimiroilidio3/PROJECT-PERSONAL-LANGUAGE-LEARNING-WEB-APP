@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Heart, RotateCcw, Trophy, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Heart, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from './AppContext';
 import { Mascot } from './Mascot';
 import { SpeakControl } from './Speech';
@@ -31,6 +31,17 @@ function answerLabel(answer: SubmittedAnswer): string {
   return answer.map(([english, portuguese]) => `${english} = ${portuguese}`).join('; ');
 }
 
+/** Uses the lesson's own vocabulary examples; never invents content. */
+function additionalExample(lesson: Lesson, exercise: Exercise | undefined): string | null {
+  if (!exercise) return null;
+  const target = correctAnswerOf(exercise).toLowerCase();
+  const seed = lesson.vocabulary.find((item) => {
+    const english = item.english.toLowerCase();
+    return target === english || target.includes(english) || item.example.toLowerCase().includes(target);
+  });
+  return seed?.example || null;
+}
+
 export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const { recordAttempt, completeLesson } = useApp();
   const [phase, setPhase] = useState<'intro' | 'playing' | 'summary'>('intro');
@@ -42,6 +53,8 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const [selectedEnglish, setSelectedEnglish] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const results = useRef<Record<string, boolean>>({});
+  const pendingAttempts = useRef<Promise<void>[]>([]);
+  const finishing = useRef(false);
   const startedAt = useRef(Date.now());
   const lessonStartedAt = useRef(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,7 +93,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       explanation: exercise.explanation,
       correctAnswer: correctAnswerOf(exercise),
     });
-    void recordAttempt({
+    pendingAttempts.current.push(recordAttempt({
       lessonId: lesson.id,
       exerciseId: exercise.id,
       exerciseType: exercise.type,
@@ -91,25 +104,33 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       durationMs: Math.min(120_000, Date.now() - startedAt.current),
       xpAwarded: 0,
       source: 'lesson',
-    });
+    }));
   };
 
   const finish = async () => {
-    const correct = Object.values(results.current).filter(Boolean).length;
-    const total = lesson.exercises.length;
-    const mistakes: LessonMistake[] = lesson.exercises
-      .filter((item) => results.current[item.id] === false)
-      .map((item) => ({
-        exerciseId: item.id,
-        prompt: item.type === 'reading' || item.type === 'listening' ? item.question : item.prompt,
-        userAnswer: '',
-        correctAnswer: correctAnswerOf(item),
-        explanation: item.explanation,
-      }));
-    const durationMs = Date.now() - lessonStartedAt.current;
-    const xp = await completeLesson({ lesson, correctCount: correct, totalExercises: total, durationMs, mistakes });
-    setSummary({ xp, correct, total, durationMs, mistakes });
-    setPhase('summary');
+    if (finishing.current) return;
+    finishing.current = true;
+    try {
+      await Promise.all(pendingAttempts.current);
+      pendingAttempts.current = [];
+      const correct = Object.values(results.current).filter(Boolean).length;
+      const total = lesson.exercises.length;
+      const mistakes: LessonMistake[] = lesson.exercises
+        .filter((item) => results.current[item.id] === false)
+        .map((item) => ({
+          exerciseId: item.id,
+          prompt: item.type === 'reading' || item.type === 'listening' ? item.question : item.prompt,
+          userAnswer: '',
+          correctAnswer: correctAnswerOf(item),
+          explanation: item.explanation,
+        }));
+      const durationMs = Date.now() - lessonStartedAt.current;
+      const xp = await completeLesson({ lesson, correctCount: correct, totalExercises: total, durationMs, mistakes });
+      setSummary({ xp, correct, total, durationMs, mistakes });
+      setPhase('summary');
+    } finally {
+      finishing.current = false;
+    }
   };
 
   const next = () => {
@@ -119,6 +140,17 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
     }
     setIndex((value) => value + 1);
     resetExerciseState();
+  };
+
+  const retry = () => {
+    if (!feedback || feedback.correct) return;
+    setFeedback(null);
+    setText('');
+    setOrder([]);
+    setMatches({});
+    setSelectedEnglish(null);
+    startedAt.current = Date.now();
+    window.setTimeout(() => inputRef.current?.focus(), 40);
   };
 
   if (phase === 'intro') {
@@ -162,6 +194,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
               startedAt.current = Date.now();
               lessonStartedAt.current = Date.now();
               results.current = {};
+              pendingAttempts.current = [];
               setIndex(0);
               setPhase('playing');
               resetExerciseState();
@@ -355,9 +388,25 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
             <p className="flex items-center gap-2 font-black">{feedback.correct ? <><CheckCircle2 size={18} className="text-success" /> Correto!</> : <><X size={18} className="text-danger" /> Ainda não é desta</>}</p>
             {!feedback.correct && <p className="mt-2 text-sm">Resposta correta: <strong>{feedback.correctAnswer}</strong></p>}
             <p className="mt-2 text-sm leading-relaxed text-muted">{feedback.explanation}</p>
-            <button type="button" className="btn-primary mt-4 w-full" onClick={next}>
-              {index + 1 === lesson.exercises.length ? 'Ver resultado' : 'Próximo exercício'} <ArrowRight size={16} />
-            </button>
+            {additionalExample(lesson, exercise) && (
+              <p className="mt-2 text-sm">
+                <span className="font-bold">Exemplo da lição:</span>{' '}
+                <span className="text-muted">“{additionalExample(lesson, exercise)}”</span>
+              </p>
+            )}
+            {exercise.type === 'listening' && (
+              <p className="mt-2 text-xs text-muted"><span className="font-bold">Transcrição:</span> {exercise.audioText}</p>
+            )}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              {!feedback.correct && (
+                <button type="button" className="btn-ghost flex-1" onClick={retry}>
+                  <RotateCcw size={15} /> Tentar novamente
+                </button>
+              )}
+              <button type="button" className="btn-primary flex-1" onClick={next}>
+                {index + 1 === lesson.exercises.length ? 'Ver resultado' : 'Próximo exercício'} <ArrowRight size={16} />
+              </button>
+            </div>
           </motion.div>
         )}
 

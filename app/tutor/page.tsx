@@ -9,7 +9,8 @@ import { SpeakControl, SpeechInput } from '@/components/Speech';
 import { PageHeader, Tag } from '@/components/ui';
 import { scenarios } from '@/lib/content/scenarios';
 import { offlineReply, type Personality, type TutorMode, type TutorReply } from '@/lib/tutor/offline';
-import type { GrammarCorrection, LearnerLevel, TutorMessage, TutorSession } from '@/lib/types';
+import type { SupportLocale } from '@/lib/tutor/validation';
+import type { LearnerLevel, TutorMessage, TutorSession } from '@/lib/types';
 
 const personalities: { id: Personality; label: string; description: string }[] = [
   { id: 'friendly', label: 'Amigável', description: 'Leve e incentivador' },
@@ -34,10 +35,11 @@ function summarize(messages: TutorMessage[], scenarioTitle: string): string {
 }
 
 export default function TutorPage() {
-  const { profile, sessions, saveSession, recordAttempt } = useApp();
+  const { profile, sessions, saveSession, recordAttempt, updateProfile } = useApp();
   const [scenarioId, setScenarioId] = useState('introduce-yourself');
   const [personality, setPersonality] = useState<Personality>('friendly');
   const [difficulty, setDifficulty] = useState<LearnerLevel>(profile.level);
+  const [supportLocale, setSupportLocale] = useState<SupportLocale>(profile.supportLocale ?? 'pt-PT');
   const [mode, setMode] = useState<TutorMode>('offline');
   const [remoteModes, setRemoteModes] = useState<TutorMode[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -86,6 +88,7 @@ export default function TutorPage() {
         difficulty,
         userText: text,
         turn: nextMessages.filter((item) => item.role === 'user').length - 1,
+        supportLocale,
       });
     } else {
       const response = await fetch('/api/tutor', {
@@ -96,6 +99,7 @@ export default function TutorPage() {
           scenarioId,
           personality,
           difficulty,
+          supportLocale,
           messages: nextMessages.filter((item) => item.provider !== 'offline').map((item) => ({ role: item.role === 'user' ? 'user' : 'assistant', content: item.text })),
         }),
       });
@@ -173,6 +177,11 @@ export default function TutorPage() {
     }
   };
 
+  const changeSupportLocale = (value: SupportLocale) => {
+    setSupportLocale(value);
+    void updateProfile({ supportLocale: value });
+  };
+
   const openSession = (session: TutorSession) => {
     setActiveId(session.id);
     setMessages(session.messages);
@@ -209,14 +218,21 @@ export default function TutorPage() {
         </div>
       )}
 
+      {mode !== 'offline' && (
+        <div className="mb-5 rounded-2xl border border-sun bg-sun-soft p-4 text-sm" role="note">
+          <p className="font-black">Este modo utiliza um serviço externo.</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">A conversa é enviada para o modelo configurado no servidor. Não introduzas dados pessoais. O modo offline continua disponível sem ligação à Internet.</p>
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-[270px_1fr]">
         <aside className="space-y-4">
           <details className="card lg:hidden" open={sessions.length === 0}>
             <summary className="cursor-pointer text-sm font-black">Definições e histórico</summary>
-            <div className="mt-4"><SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} /></div>
+            <div className="mt-4"><SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} /></div>
           </details>
           <div className="hidden space-y-4 lg:block">
-            <SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} />
+            <SetupPanel {...{ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale: changeSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }} />
           </div>
         </aside>
 
@@ -316,6 +332,8 @@ interface SetupProps {
   setPersonality: (value: Personality) => void;
   difficulty: LearnerLevel;
   setDifficulty: (value: LearnerLevel) => void;
+  supportLocale: SupportLocale;
+  setSupportLocale: (value: SupportLocale) => void;
   mode: TutorMode;
   setMode: (value: TutorMode) => void;
   remoteModes: TutorMode[];
@@ -325,7 +343,7 @@ interface SetupProps {
   setShowSetup: (value: boolean) => void;
 }
 
-function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }: SetupProps) {
+function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, difficulty, setDifficulty, supportLocale, setSupportLocale, mode, setMode, remoteModes, sessions, openSession, showSetup, setShowSetup }: SetupProps) {
   return (
     <>
       {showSetup && (
@@ -351,6 +369,13 @@ function SetupPanel({ scenarioId, setScenarioId, personality, setPersonality, di
             <p className="label">Dificuldade</p>
             <select className="input" value={difficulty} onChange={(event) => setDifficulty(event.target.value as LearnerLevel)} aria-label="Dificuldade do tutor">
               {difficulties.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+            </select>
+          </div>
+          <div className="mt-4">
+            <label className="label" htmlFor="support-locale">Português de apoio</label>
+            <select id="support-locale" className="input" value={supportLocale} onChange={(event) => setSupportLocale(event.target.value as SupportLocale)}>
+              <option value="pt-PT">Português europeu</option>
+              <option value="pt-BR">Português brasileiro</option>
             </select>
           </div>
           <div className="mt-4">

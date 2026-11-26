@@ -1,6 +1,6 @@
-import type { VocabularyItem } from './types';
+import type { MasteryStatus, ReviewEvent, ReviewQuality, VocabularyItem } from './types';
 
-export type ReviewQuality = 'again' | 'hard' | 'good' | 'easy';
+export type { ReviewQuality } from './types';
 
 /** Days between reviews. Repeats are spaced further apart as familiarity grows. */
 export const SRS_INTERVALS = [1, 2, 4, 7, 15, 30, 60, 120] as const;
@@ -35,6 +35,13 @@ export function reviewVocabulary(
   else if (quality === 'easy') interval = intervalForFamiliarity(Math.min(nextFamiliarity + 1, SRS_INTERVALS.length - 1));
   else interval = intervalForFamiliarity(nextFamiliarity);
 
+  const event: ReviewEvent = {
+    timestamp: now.toISOString(),
+    quality,
+    familiarityAfter: nextFamiliarity,
+    intervalDays: interval,
+  };
+
   return {
     ...item,
     familiarity: nextFamiliarity,
@@ -42,6 +49,7 @@ export function reviewVocabulary(
     nextReviewAt: addDays(now, interval),
     correctCount: item.correctCount + (wasCorrect ? 1 : 0),
     incorrectCount: item.incorrectCount + (wasCorrect ? 0 : 1),
+    history: [...(item.history ?? []), event].slice(-20),
   };
 }
 
@@ -55,4 +63,11 @@ export function reviewPriority(item: VocabularyItem, now: Date = new Date()): nu
     (now.getTime() - new Date(item.nextReviewAt).getTime()) / DAY_MS,
   );
   return daysOverdue * 2 + item.incorrectCount * 3 + (item.familiarity === 0 ? 4 : 0);
+}
+
+/** Transparent categories used in the UI; thresholds are explicit and testable. */
+export function masteryStatus(item: VocabularyItem): MasteryStatus {
+  if (item.familiarity >= 5 || (item.correctCount >= 3 && item.incorrectCount === 0)) return 'mastered';
+  if (item.familiarity === 0 && item.correctCount === 0) return 'new';
+  return 'learning';
 }

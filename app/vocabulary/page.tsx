@@ -6,6 +6,7 @@ import { BookOpen, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { SpeakControl } from '@/components/Speech';
 import { EmptyState, PageHeader, Tag } from '@/components/ui';
+import { masteryStatus } from '@/lib/srs';
 import { createVocabularyItem } from '@/lib/vocabulary';
 import type { VocabularyItem } from '@/lib/types';
 
@@ -120,7 +121,10 @@ export default function VocabularyPage() {
               {item.example && <p className="mt-3 text-sm italic text-ink/80">“{item.example}”</p>}
               {item.context && <p className="mt-1 text-xs text-muted">{item.context}</p>}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Tag tone={item.familiarity >= 3 ? 'green' : item.familiarity > 0 ? 'sun' : 'neutral'}>Familiaridade {item.familiarity}/7</Tag>
+                <Tag tone={masteryStatus(item) === 'mastered' ? 'green' : masteryStatus(item) === 'new' ? 'sun' : 'neutral'}>
+                  {masteryStatus(item) === 'mastered' ? 'Dominada' : masteryStatus(item) === 'new' ? 'Nova' : 'Em aprendizagem'} · {item.familiarity}/7
+                </Tag>
+                <Tag>Histórico: {item.history?.length ?? 0}</Tag>
                 <Tag>{item.correctCount} certo · {item.incorrectCount} errado</Tag>
                 <Tag>Próxima: {new Date(item.nextReviewAt).toLocaleDateString('pt-PT')}</Tag>
               </div>

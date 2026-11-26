@@ -1,6 +1,7 @@
 import { getScenario } from '@/lib/content/scenarios';
 import { evaluateScenarioAnswer } from '@/lib/practice';
 import type { GrammarCorrection, LearnerLevel } from '@/lib/types';
+import type { SupportLocale } from './validation';
 
 export interface TutorReply {
   text: string;
@@ -18,6 +19,19 @@ interface OfflineInput {
   difficulty: LearnerLevel;
   userText: string;
   turn: number;
+  supportLocale?: SupportLocale;
+}
+
+/** Lightweight variant adaptation for the built-in scripted replies. */
+export function localizePortuguese(text: string, locale: SupportLocale = 'pt-PT'): string {
+  if (locale === 'pt-PT') return text;
+  return text
+    .replace(/conhecer-te/gi, 'conhecer você')
+    .replace(/encontrar-te/gi, 'encontrar você')
+    .replace(/gostas/gi, 'gosta')
+    .replace(/o teu/gi, 'o seu')
+    .replace(/a tua/gi, 'a sua')
+    .replace(/os teus/gi, 'os seus');
 }
 
 const scripts: Record<string, { lines: string[]; translations: string[]; followUps: string[] }> = {
@@ -93,7 +107,7 @@ const openers: Record<Personality, string> = {
   formal: 'Thank you. ',
 };
 
-export function offlineReply({ scenarioId, personality, difficulty, userText, turn }: OfflineInput): TutorReply {
+export function offlineReply({ scenarioId, personality, difficulty, userText, turn, supportLocale = 'pt-PT' }: OfflineInput): TutorReply {
   const scenario = getScenario(scenarioId);
   const script = scripts[scenarioId] ?? scripts.everyday;
   const index = Math.min(turn, script.lines.length - 1);
@@ -105,7 +119,7 @@ export function offlineReply({ scenarioId, personality, difficulty, userText, tu
 
   return {
     text,
-    translation: script.translations[index],
+    translation: localizePortuguese(script.translations[index], supportLocale),
     alternatives: [...new Set(alternatives)].slice(0, 3),
     corrections: findCorrections(userText),
   };
