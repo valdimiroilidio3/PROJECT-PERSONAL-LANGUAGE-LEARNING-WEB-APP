@@ -37,7 +37,7 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 44 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation and gamification) |
+| `npm test` | Runs 49 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification and weekly routines) |
 
 ## What is included
 
@@ -58,6 +58,9 @@ npm start
 - **Daily quests** computed from today's real completions, attempts, XP and reviews — no invented rewards or rivals.
 - **Personal leagues** (Bronze → Diamante) based only on the learner's own saved XP, with clear thresholds and progress to the next tier.
 - **Session review** after each lesson: accuracy by exercise type, saved mistakes and a direct link to the review notebook.
+- **Rotating daily quest**: a fifth mission changes deterministically with the local calendar day (practice scenario, correct answers, second lesson or study minutes) and is measured only from today's saved activity.
+- **Weekly challenges**: three of four rotating goals (weekly XP, active days, answers or reviews) shown with a Monday-to-Sunday window; all values come from that week's saved events.
+- **Habit garden**: 28 calendar days with real saved activity only. Empty days are never penalised and never reduce XP, league or achievements.
 - **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.

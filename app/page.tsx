@@ -20,7 +20,7 @@ import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/l
 import { getNextStep } from '@/lib/recommendations';
 import { lessonsFor, scenariosFor } from '@/lib/content';
 import { isOverdue } from '@/lib/srs';
-import { deriveDailyQuests, deriveLeague } from '@/lib/gamification';
+import { deriveDailyQuests, deriveHabitGarden, deriveLeague, deriveWeeklyChallenges } from '@/lib/gamification';
 
 export default function DashboardPage() {
   const { profile, language, completions, attempts, vocabulary } = useApp();
@@ -37,6 +37,14 @@ export default function DashboardPage() {
     [analytics, profile, completions, attempts, vocabulary],
   );
   const league = useMemo(() => deriveLeague(analytics.totalXp), [analytics.totalXp]);
+  const weekly = useMemo(
+    () => deriveWeeklyChallenges({ analytics, profile, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary],
+  );
+  const garden = useMemo(
+    () => deriveHabitGarden({ completions, attempts }),
+    [completions, attempts],
+  );
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
   const hour = new Date().getHours();
@@ -95,7 +103,7 @@ export default function DashboardPage() {
 
       <section>
         <SectionTitle title="Missões de hoje" action={<span className="text-xs font-bold text-muted">{quests.filter((quest) => quest.completed).length} de {quests.length} concluídas</span>} />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {quests.map((quest) => (
             <Link
               key={quest.id}
@@ -114,6 +122,9 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+        <p className="mt-2 text-[11px] text-muted">
+          A quinta missão muda todos os dias. Todo o progresso vem apenas de atividade guardada neste browser.
+        </p>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
@@ -141,6 +152,71 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      <section className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="card min-w-0">
+          <SectionTitle
+            title="Desafios da semana"
+            action={<span className="text-xs font-bold text-muted">{weekly.window.label}</span>}
+          />
+          <div className="space-y-3">
+            {weekly.challenges.slice(0, 3).map((challenge) => (
+              <Link
+                key={challenge.id}
+                href={challenge.href}
+                className="flex flex-col gap-2 rounded-2xl border border-line p-3 transition hover:border-ink/30"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-extrabold">{challenge.title}</p>
+                  <Tag tone={challenge.completed ? 'green' : 'sun'}>
+                    {challenge.completed ? 'Feito' : `${challenge.progress} / ${challenge.target}`}
+                  </Tag>
+                </div>
+                <p className="text-xs leading-relaxed text-muted">{challenge.description}</p>
+                <ProgressBar value={challenge.progress} max={challenge.target} color={challenge.completed ? 'bg-success' : 'bg-sun'} />
+              </Link>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-muted">
+            A semana começa à segunda-feira. Não há penalização por dias sem atividade.
+          </p>
+        </div>
+
+        <div className="card min-w-0">
+          <SectionTitle title="Jardim de hábitos" />
+          <div className="grid grid-cols-7 gap-1.5" aria-label="Atividade dos últimos 28 dias">
+            {garden.days.map((day) => {
+              const dateLabel = new Date(`${day.key}T12:00:00`).toLocaleDateString('pt-PT', {
+                day: 'numeric',
+                month: 'short',
+              });
+              return (
+                <div
+                  key={day.key}
+                  title={`${dateLabel}: ${day.active ? `${day.xp} XP · ${day.minutes} min` : 'sem atividade guardada'}`}
+                  aria-label={`${dateLabel}: ${day.active ? `${day.xp} XP` : 'sem atividade'}`}
+                  className={`flex h-9 items-center justify-center rounded-xl text-[10px] font-black ${
+                    day.active
+                      ? day.isToday
+                        ? 'bg-ink text-white'
+                        : 'bg-success-soft text-success'
+                      : 'bg-line text-muted'
+                  }`}
+                >
+                  {day.label}
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted">
+            <span><strong className="text-ink">{garden.activeDays}</strong> dias com atividade</span>
+            <span><strong className="text-ink">{garden.totalXp}</strong> XP no período</span>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Cada quadrado é um dia real guardado neste browser. Dias vazios não apagam XP, liga nem conquistas.
+          </p>
+        </div>
+      </section>
+
       <section className="rounded-4xl border border-line bg-white p-5 shadow-card sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
@@ -156,7 +232,7 @@ export default function DashboardPage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section>
+        <section className="min-w-0">
           <SectionTitle
             title="O teu percurso"
             action={<Link href="/learn" className="text-xs font-extrabold text-muted hover:text-ink">Ver tudo →</Link>}
@@ -185,7 +261,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <section className="card">
             <SectionTitle title="Desafio de hoje" />
             <p className="text-sm font-extrabold">{challenge.title}</p>

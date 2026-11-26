@@ -108,3 +108,26 @@ Inspirado nos padrões de produto de Duolingo e Tooter, mas com identidade, comp
 
 - Deploy de produção: `dpl_EVDBC6CiGhtdhysr1CetChopS3JJ`, commit `8c29a3c`, estado `READY`, alias **https://lumio-english.vercel.app**.
 - Verificação em produção: as quatro missões, os limiares das ligas e a explicação “Não há rivais inventados” apareceram no painel inicial com dados zerados para um visitante novo.
+
+---
+
+# Rotinas semanais — 26 nov 2026 (quarta validação)
+
+## Implementado
+
+- **Quinta missão rotativa**: um de quatro desafios muda de forma determinística com o dia local (cenário de prática, respostas corretas, segunda lição ou minutos de estudo). O progresso vem apenas de eventos guardados nesse dia.
+- **Desafios da semana**: três de quatro objetivos rotativos (XP semanal, dias ativos, respostas ou revisões), sempre dentro de uma janela de segunda a domingo. Nenhum valor é inventado.
+- **Jardim de hábitos**: 28 dias reais com atividade guardada. Dias vazios não retiram XP, liga ou conquistas.
+- Correção de layout: `min-w-0` nos cartões das grelhas do painel evita que conteúdos longos em 390 px expandam a página.
+
+## Browser real (Chromium 158)
+
+- Painel novo: 5 missões, quinta missão “Estuda 10 minutos”, 0 de 5 concluídas; desafios da semana `23/11 – 29/11` todos a zero; jardim com `0 dias com atividade`. Evidência: `validation/weekly-before.png`.
+- Lição `greetings` concluída com 100% de acerto.
+- Regresso ao painel: 2 de 5 missões concluídas, `7 / 10 respostas`, `20 / 20 XP`; desafios da semana com `25 / 150 XP`, `1 / 3 dias` e `7 / 40 respostas`; jardim com `1 dia com atividade` e `25 XP no período`. Evidência: `validation/weekly-after.png`.
+- Mobile 390×844: desafios e jardim visíveis, `scrollWidth = innerWidth = 390`, sem overflow. Evidência: `validation/weekly-mobile.png`.
+- `ERRORS []`: nenhum erro de consola ou de página.
+
+## Automações
+
+`npm run typecheck`, `npm run lint`, `npm test` e `npm run build` terminaram com código 0. A suíte ficou com 14 ficheiros e 49 testes, cobrindo rotação diária, janela semanal, contagens por dia ativo e o facto de dias vazios não subtraírem progresso. O build gerou 12 rotas.
