@@ -37,7 +37,7 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 40 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs and progress isolation) |
+| `npm test` | Runs 44 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation and gamification) |
 
 ## What is included
 
@@ -54,7 +54,10 @@ npm start
 - **Speech service** using the Web Speech API with the selected language's locale: voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed; speech controls are hidden for code tracks.
 - **Real-life practice** with fifteen scenarios (eight English plus one per additional pack) and keyword-based answer feedback.
 - **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in.
-- **Gamification and analytics** derived only from saved activity: XP, levels, daily goals, streaks, achievements, weekly calendar, session history and personal bests.
+- **Gamification and analytics** derived only from saved activity: XP, streaks, achievements, weekly calendar, session history and personal bests.
+- **Daily quests** computed from today's real completions, attempts, XP and reviews — no invented rewards or rivals.
+- **Personal leagues** (Bronze → Diamante) based only on the learner's own saved XP, with clear thresholds and progress to the next tier.
+- **Session review** after each lesson: accuracy by exercise type, saved mistakes and a direct link to the review notebook.
 - **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.

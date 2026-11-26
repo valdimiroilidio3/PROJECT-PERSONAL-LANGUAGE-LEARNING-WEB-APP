@@ -20,6 +20,7 @@ import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/l
 import { getNextStep } from '@/lib/recommendations';
 import { lessonsFor, scenariosFor } from '@/lib/content';
 import { isOverdue } from '@/lib/srs';
+import { deriveDailyQuests, deriveLeague } from '@/lib/gamification';
 
 export default function DashboardPage() {
   const { profile, language, completions, attempts, vocabulary } = useApp();
@@ -31,6 +32,11 @@ export default function DashboardPage() {
     () => getNextStep({ analytics, profile, lessons, completions, attempts, vocabulary }),
     [analytics, profile, completions, attempts, vocabulary, lessons],
   );
+  const quests = useMemo(
+    () => deriveDailyQuests({ analytics, profile, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary],
+  );
+  const league = useMemo(() => deriveLeague(analytics.totalXp), [analytics.totalXp]);
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
   const hour = new Date().getHours();
@@ -85,6 +91,54 @@ export default function DashboardPage() {
         <StatTile label="Lições" value={analytics.completedLessons} hint={`de ${lessons.length} disponíveis`} icon={<CheckCircle2 size={17} className="text-success" />} />
         <StatTile label="Precisão" value={`${analytics.accuracy}%`} hint={`${analytics.totalAttempts} respostas`} icon={<CheckCircle2 size={17} className="text-success" />} />
         <StatTile label="Palavras" value={vocabulary.length} hint={`${overdue.length} para revisar`} icon={<BookOpen size={17} className="text-muted" />} />
+      </section>
+
+      <section>
+        <SectionTitle title="Missões de hoje" action={<span className="text-xs font-bold text-muted">{quests.filter((quest) => quest.completed).length} de {quests.length} concluídas</span>} />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {quests.map((quest) => (
+            <Link
+              key={quest.id}
+              href={quest.href}
+              className={`card flex flex-col gap-3 transition hover:-translate-y-0.5 hover:border-ink/25 ${quest.completed ? 'border-success/40 bg-success-soft' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-extrabold">{quest.title}</p>
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${quest.completed ? 'bg-success text-white' : 'bg-cream text-muted'}`}>
+                  {quest.completed ? <CheckCircle2 size={16} /> : `${quest.progress}`}
+                </span>
+              </div>
+              <p className="flex-1 text-xs leading-relaxed text-muted">{quest.description}</p>
+              <ProgressBar value={quest.progress} max={quest.target} color={quest.completed ? 'bg-success' : 'bg-sun'} />
+              <p className="text-[11px] font-extrabold text-muted">{quest.progress} / {quest.target} {quest.unit}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+        <div className="flex items-center gap-4 rounded-4xl border border-line bg-white p-5 shadow-card">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-sun-soft text-3xl" aria-hidden>{league.emblem}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-muted">A tua liga</p>
+            <p className="mt-1 text-2xl font-black">{league.name}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              {league.next
+                ? `${league.next.minXp - analytics.totalXp} XP até ${league.next.name}.`
+                : 'Topo da escala pessoal. Continua a praticar para manter o ritmo.'}
+            </p>
+            <div className="mt-3"><ProgressBar value={league.progress} max={league.target} /></div>
+          </div>
+        </div>
+        <div className="rounded-4xl border border-line bg-white p-5 shadow-card">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Como funcionam as ligas</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Não há rivais inventados: a liga sobe apenas com o XP que ganhaste nas lições, prática e revisões guardadas neste browser.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-extrabold">
+            <Tag>🥉 Bronze · 0 XP</Tag><Tag>🥈 Prata · 100 XP</Tag><Tag>🥇 Ouro · 300 XP</Tag><Tag>💎 Safira · 700 XP</Tag><Tag>👑 Diamante · 1500 XP</Tag>
+          </div>
+        </div>
       </section>
 
       <section className="rounded-4xl border border-line bg-white p-5 shadow-card sm:p-6">

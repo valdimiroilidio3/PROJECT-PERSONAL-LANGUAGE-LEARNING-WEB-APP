@@ -19,12 +19,19 @@ interface Feedback {
   correctAnswer: string;
 }
 
+interface SkillStat {
+  label: string;
+  correct: number;
+  total: number;
+}
+
 interface Summary {
   xp: number;
   correct: number;
   total: number;
   durationMs: number;
   mistakes: LessonMistake[];
+  skills: SkillStat[];
 }
 
 function answerLabel(answer: SubmittedAnswer): string {
@@ -127,7 +134,28 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         }));
       const durationMs = Date.now() - lessonStartedAt.current;
       const xp = await completeLesson({ lesson, correctCount: correct, totalExercises: total, durationMs, mistakes });
-      setSummary({ xp, correct, total, durationMs, mistakes });
+      const labels: Record<Exercise['type'], string> = {
+        'multiple-choice': 'Escolha',
+        translation: 'Tradução',
+        'word-order': 'Ordem das palavras',
+        matching: 'Associação',
+        'fill-blank': 'Preenchimento',
+        listening: 'Escuta',
+        dialogue: 'Diálogo',
+        sentence: 'Escrita',
+        reading: 'Leitura',
+      };
+      const skillMap = new Map<string, SkillStat>();
+      for (const item of lesson.exercises) {
+        const result = results.current[item.id];
+        if (result === undefined) continue;
+        const label = labels[item.type];
+        const stat = skillMap.get(label) ?? { label, correct: 0, total: 0 };
+        stat.total += 1;
+        if (result) stat.correct += 1;
+        skillMap.set(label, stat);
+      }
+      setSummary({ xp, correct, total, durationMs, mistakes, skills: [...skillMap.values()] });
       setPhase('summary');
     } finally {
       finishing.current = false;
@@ -227,6 +255,26 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
             <Link href="/review" className="btn-ghost flex-1">Rever vocabulário</Link>
           </div>
         </div>
+
+        <section className="card mt-5 text-left">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Revisão da sessão</p>
+          <h2 className="mt-1 text-lg font-black">O que aconteceu aqui</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {summary.skills.map((skill) => (
+              <div key={skill.label} className="rounded-2xl bg-cream p-3">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span>{skill.label}</span>
+                  <span className="text-muted">{skill.correct}/{skill.total} · {Math.round((skill.correct / skill.total) * 100)}%</span>
+                </div>
+                <div className="mt-2"><ProgressBar value={skill.correct} max={skill.total} color={skill.correct === skill.total ? 'bg-success' : 'bg-sun'} /></div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <p className="text-xs text-muted">{summary.mistakes.length} {summary.mistakes.length === 1 ? 'ponto guardado' : 'pontos guardados'} para revisar mais tarde.</p>
+            <Link href="/review" className="btn-ghost !py-2 text-xs">Ir para revisão <ArrowRight size={14} /></Link>
+          </div>
+        </section>
 
         {summary.mistakes.length > 0 && (
           <section className="card mt-5">

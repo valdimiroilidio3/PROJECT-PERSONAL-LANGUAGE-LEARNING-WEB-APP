@@ -78,3 +78,28 @@ O catálogo passou a ter oito percursos independentes: inglês (16 lições), es
 - Deploy de produção: `dpl_Bzxyji8bg97Qhtcma8NmPb1piZ9Z`, commit `f77ab59`, estado `READY`, alias **https://lumio-english.vercel.app**.
 - Variáveis de ambiente: nenhuma (`envs: []`). `GET /api/tutor` em produção continuou a devolver `modes: []`.
 - Verificação em produção: `/` e `/onboarding` renderizam as oito opções de aprendizagem e o título genérico “Lumio — Aprende todos os dias”.
+
+---
+
+# Gamificação profissional — 26 nov 2026 (terceira validação)
+
+Inspirado nos padrões de produto de Duolingo e Tooter, mas com identidade, componentes e conteúdo originais e sem copiar ecrãs ou personagens.
+
+## Implementado
+
+- **Missões de hoje**: quatro cartões com progresso real — concluir uma lição, responder 10 vezes, ganhar o XP alvo e rever 3 palavras. Contagens vêm apenas de `completions`, `attempts`, XP atribuído e vocabulário guardado.
+- **Ligas pessoais**: Bronze, Prata, Ouro, Safira e Diamante, com limiares explícitos e barra até ao próximo nível. Não existem rivais fictícios nem XP inventado.
+- **Revisão da sessão**: no fim de cada lição, precisão por tipo de exercício, pontos guardados para revisão e atalho para o caderno.
+- **Selo de liga** no cabeçalho móvel, derivado do XP total guardado.
+
+## Browser real (Chromium 158)
+
+- Painel inicial com 0/4 missões e liga Bronze antes de qualquer atividade.
+- Lição `greetings` concluída com 100%: a revisão da sessão mostrou 7 categorias, todas 1/1, e 0 pontos guardados para revisão (respostas corretas). Evidência: `validation/session-review.png`.
+- Regresso ao painel: 2/4 missões concluídas, `7 / 10 respostas`, `20 / 20 XP`, 8 palavras com revisão pendente e `75 XP até Prata`. Evidência: `validation/gamified-dashboard.png`.
+- Mobile 390×844: missões e liga visíveis, `scrollWidth = innerWidth = 390`, sem overflow. Evidência: `validation/gamified-mobile.png`.
+- Nenhum erro de consola.
+
+## Automações
+
+`typecheck`, `lint`, `test` e `build` terminaram com código 0. A suíte ficou com 14 ficheiros e 44 testes, incluindo limiares de liga e cálculo de missões a partir de atividade guardada.

@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { buildEvents, calculateStreak } from '@/lib/analytics';
+import { deriveLeague } from '@/lib/gamification';
 import { languages } from '@/lib/languages';
 import type { LanguageId } from '@/lib/types';
 import { useApp } from './AppContext';
@@ -40,6 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const xp = completions.reduce((sum, item) => sum + item.xpAwarded, 0)
     + attempts.filter((item) => item.source === 'practice' || item.source === 'review').reduce((sum, item) => sum + item.xpAwarded, 0);
   const streakDays = calculateStreak(buildEvents(completions, attempts));
+  const league = deriveLeague(xp);
 
   return (
     <div className="min-h-screen lg:pl-64">
@@ -93,7 +95,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-black tracking-tight">Lumio</span>
         </Link>
         <div className="flex items-center gap-2 text-xs font-extrabold">
-          <span className="pill bg-white text-muted"><Flame size={13} className="text-danger" /> {streakDays}</span>
+          <span className="pill bg-white text-muted" title={`${streakDays} dias consecutivos`}><Flame size={13} className="text-danger" /> {streakDays}</span>
+          <span className="pill bg-white" title={`Liga ${league.name}`}>{league.emblem}</span>
           <span className="pill bg-sun"><Trophy size={13} /> {xp} XP</span>
           <Link href="/settings" className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white" aria-label="Definições">
             <Settings size={16} />
