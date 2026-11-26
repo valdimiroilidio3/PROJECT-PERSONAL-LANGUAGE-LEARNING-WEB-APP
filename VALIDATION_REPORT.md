@@ -131,3 +131,8 @@ Inspirado nos padrões de produto de Duolingo e Tooter, mas com identidade, comp
 ## Automações
 
 `npm run typecheck`, `npm run lint`, `npm test` e `npm run build` terminaram com código 0. A suíte ficou com 14 ficheiros e 49 testes, cobrindo rotação diária, janela semanal, contagens por dia ativo e o facto de dias vazios não subtraírem progresso. O build gerou 12 rotas.
+
+### Publicação das rotinas semanais
+
+- Deploy de produção: `dpl_ESqu474PXuNJMm4qZjV2kz5af93C`, commit `8efff13`, estado `READY` com `readySubstate PROMOTED`, alias **https://lumio-english.vercel.app**.
+- Verificação em produção: painel com 5 missões (a quinta “Estuda 10 minutos”), desafios na janela `23/11 – 29/11` e jardim com `0 dias com atividade` para um visitante novo. Nenhuma variável de IA foi adicionada; `GET /api/tutor` continua a devolver `modes: []`.
