@@ -583,3 +583,30 @@ export function examAttemptStats(
     lastAttemptAt: last,
   };
 }
+
+/** Uma tentativa completa, normalizada para apresentação. */
+export interface ExamAttemptRecord {
+  correct: number;
+  total: number;
+  percent: number;
+  xp: number;
+  timestamp: string;
+}
+
+/** Histórico das tentativas completas (mais recentes primeiro), ignorando registos com formato estranho. */
+export function examAttemptHistory(
+  exam: SampleExam,
+  attempts: ReadonlyArray<Pick<Attempt, 'exerciseId' | 'userAnswer' | 'xpAwarded' | 'timestamp'>>,
+  limit = 4,
+): ExamAttemptRecord[] {
+  const records: ExamAttemptRecord[] = [];
+  for (const attempt of attempts) {
+    if (attempt.exerciseId !== `${exam.id}-complete`) continue;
+    const parsed = parseExamScore(attempt.userAnswer);
+    if (!parsed) continue;
+    const total = parsed.total > 0 ? parsed.total : exam.questions.length;
+    const percent = total > 0 ? Math.round((parsed.correct / total) * 100) : 0;
+    records.push({ correct: parsed.correct, total, percent, xp: attempt.xpAwarded, timestamp: attempt.timestamp });
+  }
+  return records.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, limit);
+}

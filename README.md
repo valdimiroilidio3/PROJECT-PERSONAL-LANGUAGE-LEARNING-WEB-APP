@@ -37,7 +37,7 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 92 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue, sample exams) |
+| `npm test` | Runs 93 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue, sample exams) |
 
 ## What is included
 
@@ -64,6 +64,7 @@ npm start
 - **Monthly challenge**: one large monthly goal chosen by the local calendar (400 XP, 12 active days, 120 answers or 8 lessons), measured only from this month's saved events.
 - **Habit garden**: 28 calendar days with real saved activity only. Empty days are never penalised and never reduce XP, league or achievements.
 - **Motion feedback**: confetti burst on correct answers, a short card shake plus the lost heart pop on mistakes, bouncing mascot and counted-up XP/accuracy/minutes on the summary screen, animated skill bars and a pulsing streak flame — all respecting `prefers-reduced-motion`.
+- **Simulados in progress**: the Progress page has a dedicated section per available exam — best score, pass status, attempts, XP, and the last four attempts with date, score and XP — all derived from saved attempts; programming packs get an honest empty state.
 - **Simulados on the dashboard and in review**: the home sidebar shows a real card per available exam (best score, attempts, XP earned and pass status, derived only from saved practice attempts), and the review page carries a banner with the best exam result and a direct link to `/exames`. Programming packs get an honest line instead of an empty card.
 - **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
 - **Original illustrations** (Nori's journey for onboarding and OpenGraph, the league podium, the habit garden, Nori at the café counter for practice, Nori at his reading nook for review/empty states, Nori on the summit for progress, Nori on the path for learn and Nori at the chalkboard for lesson intros) were commissioned for Lumio and live in `public/images/`. The mascot remains an inline SVG; no borrowed characters or assets.

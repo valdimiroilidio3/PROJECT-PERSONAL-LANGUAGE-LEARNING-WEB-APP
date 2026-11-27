@@ -1,6 +1,7 @@
 'use client';
 
-import { Award, BarChart3, Clock3, Info, Trophy } from 'lucide-react';
+import { ArrowRight, Award, BarChart3, Clock3, GraduationCap, Info, Trophy } from 'lucide-react';
+import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useApp } from '@/components/AppContext';
@@ -9,6 +10,7 @@ import { popIn } from '@/components/effects';
 import { deriveAchievements, deriveAnalytics } from '@/lib/analytics';
 import { accuracyPercent } from '@/lib/scoring';
 import { getLesson } from '@/lib/content';
+import { examsFor, examAttemptStats, examAttemptHistory } from '@/lib/exams';
 
 export default function ProgressPage() {
   const { language, completions, attempts, vocabulary, sessions } = useApp();
@@ -16,6 +18,10 @@ export default function ProgressPage() {
   const reviewCount = attempts.filter((item) => item.source === 'review').length;
   const achievements = deriveAchievements(analytics, reviewCount, sessions.length);
   const maxXp = Math.max(1, ...analytics.week.map((day) => day.xp));
+  const exams = examsFor(language.id);
+  const examStats = exams.map((exam) => examAttemptStats(exam, attempts));
+  const examHistory = exams.map((exam) => ({ exam, records: examAttemptHistory(exam, attempts) }));
+  const passPercentByExam = new Map(exams.map((exam) => [exam.id, exam.passPercent]));
 
   return (
     <div>
@@ -112,6 +118,76 @@ export default function ProgressPage() {
             ),
           )}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <SectionTitle
+          title="Simulados"
+          action={<Link href="/exames" className="inline-flex items-center gap-1 text-xs font-extrabold text-muted hover:text-ink">Ver simulados <ArrowRight size={13} /></Link>}
+        />
+        {examStats.length === 0 ? (
+          <EmptyState
+            title="Sem simulados para programação"
+            description="Os pacotes de JavaScript e Python praticam com exercícios e projetos guiados. Os simulados de proficiência existem para inglês, espanhol (A1 e A2) e neerlandês, francês, alemão e italiano (A1)."
+          />
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {examStats.map((stats) => {
+              const history = examHistory.find((item) => item.exam.id === stats.examId)?.records ?? [];
+              return (
+                <div key={stats.examId} className="card flex flex-col">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sun-soft text-sun-deep"><GraduationCap size={22} /></span>
+                      <div>
+                        <p className="font-extrabold">Simulado {stats.level}</p>
+                        <p className="text-[11px] text-muted">{stats.total} questões · com cronómetro · aprovação ≥ {exams.find((item) => item.id === stats.examId)?.passPercent}%</p>
+                      </div>
+                    </div>
+                    {stats.attempts > 0 ? (
+                      <Tag tone={stats.passed ? 'green' : 'sun'}>{stats.passed ? 'Aprovado' : 'Em treino'}</Tag>
+                    ) : (
+                      <Tag tone="sun">Por fazer</Tag>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <p className="text-4xl font-black">{stats.attempts > 0 ? stats.bestPercent : '—'}<span className="text-lg text-muted">%</span></p>
+                    <p className="text-right text-xs leading-relaxed text-muted">
+                      {stats.attempts > 0 ? (
+                        <>melhor: <strong className="text-ink">{stats.bestCorrect}/{stats.total}</strong><br />{stats.attempts} {stats.attempts === 1 ? 'tentativa' : 'tentativas'} · {stats.xp} XP</>
+                      ) : (
+                        'Ainda sem tentativas'
+                      )}
+                    </p>
+                  </div>
+                  <div className="mt-2"><ProgressBar value={stats.bestCorrect} max={stats.total} color={stats.passed ? 'bg-success' : 'bg-sun'} /></div>
+
+                  {history.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted">Últimas tentativas</p>
+                      <ul className="mt-2 divide-y divide-line rounded-2xl border border-line">
+                        {history.map((record, index) => (
+                          <li key={`${record.timestamp}-${index}`} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-xs">
+                            <span className="text-muted">{new Date(record.timestamp).toLocaleDateString('pt-PT')}</span>
+                            <span className="font-bold">{record.correct}/{record.total} · {record.percent}%</span>
+                            <span className="text-muted">{record.xp} XP</span>
+                            <Tag tone={record.percent >= (passPercentByExam.get(stats.examId) ?? 60) ? 'green' : 'neutral'}>{record.percent >= (passPercentByExam.get(stats.examId) ?? 60) ? 'Aprovado' : 'Não aprovado'}</Tag>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <Link href="/exames" className="btn-ghost mt-4 w-full !py-2 text-xs">
+                    {stats.attempts > 0 ? 'Repetir simulado' : 'Fazer simulado'} <ArrowRight size={13} />
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-3 text-xs text-muted">Resultados indicativos: não são exames oficiais nem emitem certificados.</p>
       </section>
 
       <section className="mt-8">
