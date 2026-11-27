@@ -17,6 +17,7 @@ import { motion } from 'framer-motion';
 import { Mascot } from '@/components/Mascot';
 import { useApp } from '@/components/AppContext';
 import { EmptyState, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
+import { FadeUp } from '@/components/effects';
 import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/lib/analytics';
 import { getNextStep } from '@/lib/recommendations';
 import { lessonsFor, scenariosFor } from '@/lib/content';
@@ -98,12 +99,18 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile label="Sequência" value={`${analytics.streak} dias`} hint="Dias consecutivos com atividade" icon={<Flame size={17} className="text-danger" />} />
-        <StatTile label="XP total" value={analytics.totalXp} hint="Lições, prática e revisões" icon={<Trophy size={17} className="text-sun-deep" />} />
-        <StatTile label="Estudo" value={`${analytics.studyMinutes} min`} hint="Tempo guardado nas sessões" icon={<Clock3 size={17} className="text-muted" />} />
-        <StatTile label="Lições" value={analytics.completedLessons} hint={`de ${lessons.length} disponíveis`} icon={<CheckCircle2 size={17} className="text-success" />} />
-        <StatTile label="Precisão" value={`${analytics.accuracy}%`} hint={`${analytics.totalAttempts} respostas`} icon={<CheckCircle2 size={17} className="text-success" />} />
-        <StatTile label="Palavras" value={vocabulary.length} hint={`${overdue.length} para revisar`} icon={<BookOpen size={17} className="text-muted" />} />
+        {[
+          { label: 'Sequência', value: `${analytics.streak} dias`, hint: 'Dias consecutivos com atividade', delay: 0, icon: <Flame size={17} className="text-danger" /> },
+          { label: 'XP total', value: analytics.totalXp, hint: 'Lições, prática e revisões', delay: 1, icon: <Trophy size={17} className="text-sun-deep" /> },
+          { label: 'Estudo', value: `${analytics.studyMinutes} min`, hint: 'Tempo guardado nas sessões', delay: 2, icon: <Clock3 size={17} className="text-muted" /> },
+          { label: 'Lições', value: analytics.completedLessons, hint: `de ${lessons.length} disponíveis`, delay: 3, icon: <CheckCircle2 size={17} className="text-success" /> },
+          { label: 'Precisão', value: `${analytics.accuracy}%`, hint: `${analytics.totalAttempts} respostas`, delay: 4, icon: <CheckCircle2 size={17} className="text-success" /> },
+          { label: 'Palavras', value: vocabulary.length, hint: `${overdue.length} para revisar`, delay: 5, icon: <BookOpen size={17} className="text-muted" /> },
+        ].map((tile) => (
+          <FadeUp key={tile.label} delay={tile.delay * 0.05} className="h-full">
+            <StatTile label={tile.label} value={tile.value} hint={tile.hint} icon={tile.icon} />
+          </FadeUp>
+        ))}
       </section>
 
       <section>

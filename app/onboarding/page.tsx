@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Check, CircleCheck } from 'lucide-react';
 import { Mascot } from '@/components/Mascot';
+import { Confetti, popIn } from '@/components/effects';
 import { useApp } from '@/components/AppContext';
 import { diagnosticFor, lessonForScore, lessonsFor } from '@/lib/content';
 import { languages } from '@/lib/languages';
@@ -218,8 +219,9 @@ export default function OnboardingPage() {
         )}
 
         {step === totalSteps - 1 && (
-          <>
-            <Mascot className="mx-auto h-28 w-28" mood="celebrate" />
+          <div className="relative">
+            <Confetti mode="burst" count={30} />
+            <motion.div {...popIn(0.05)}><Mascot className="mx-auto h-28 w-28" mood="celebrate" /></motion.div>
             <h1 className="mt-3 text-center text-2xl font-black">Plano pronto</h1>
             <p className="mt-2 text-center text-sm text-muted">
               Vais começar com {language.emblem} {language.label}, {level} · {minutes} min/dia.
@@ -229,7 +231,7 @@ export default function OnboardingPage() {
               <p className="mt-1 text-muted">Com base nas tuas respostas ({score} pontos), recomendamos começar por aqui. O diagnóstico é apenas indicativo — não é um nível oficial.</p>
               <p className="mt-2 text-xs text-muted">{packSize} lições disponíveis neste percurso. As estatísticas de outras línguas ficam separadas.</p>
             </div>
-          </>
+          </div>
         )}
 
         <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">

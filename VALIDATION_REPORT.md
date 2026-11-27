@@ -210,3 +210,24 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Vida visual, terceira ronda — 27 nov 2026 (oitava validação)
+
+## O que foi implementado
+
+- **Duas novas ilustrações originais**: `nori-learn.jpg` (Nori com mochila e livro, a caminho da "escola" — hero da página Aprender) e `nori-lesson.jpg` (Nori no quadro a explicar — banner do ecrã de introdução da lição).
+- **Aprender**: hero ilustrado, grelha de lições e secção "Como funciona" entram em cascata.
+- **Intro da lição**: banner da sala de aula no cartão de abertura.
+- **Dashboard**: seis tiles de estatísticas entram em cascata (FadeUp escalonado).
+- **Onboarding**: o passo final "Plano pronto" celebra com confetti e pop elástico do mascote.
+- `StatTile` preenche a altura do contentor para alinhamento uniforme.
+
+## Verificação
+
+- Chromium em desktop e 390 px: hero de Aprender visível (16 lições em cascata), banner da lição visível, botão "Começar lição" presente, dashboard completo sem overflow, 0 erros de página/consola. Evidência: `validation/learn-hero.png`, `validation/lesson-intro.png`, `validation/dashboard-life.png`, `validation/life2-mobile.png`.
+- `npm run typecheck`, `npm run lint`, `npm test` (17 ficheiros, 75 testes) e `npm run build` (12 rotas) — todos com código 0 (uma primeira execução do build falhou transientemente a seguir ao compile e passou à segunda; o dev server foi reiniciado de seguida).
+- Rotas confirmadas com HTTP 200 no dev server após reinício.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, useAnimation } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle2, Heart, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from './AppContext';
@@ -204,6 +205,17 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
               <p className="mt-1 text-sm text-muted">{lesson.subtitle}</p>
             </div>
             <Mascot className="h-24 w-24" mood="wink" />
+          </div>
+          <div className="relative mt-6 overflow-hidden rounded-3xl border border-line">
+            <Image
+              src="/images/nori-lesson.jpg"
+              alt="Nori junto a um quadro, a explicar a lição com formas e setas desenhadas a giz"
+              width={1376}
+              height={768}
+              priority
+              className="h-32 w-full object-cover object-[50%_28%] sm:h-44"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink/55 via-ink/10 to-transparent" aria-hidden />
           </div>
           <div className="mt-6 rounded-3xl bg-cream p-5">
             <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Objetivo da lição</p>

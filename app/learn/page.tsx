@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CheckCircle2, Lock, Play, Sparkles } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
+import { FadeUp, Stagger, StaggerItem } from '@/components/effects';
 import { PageHeader, ProgressBar, SectionTitle, Tag } from '@/components/ui';
 import { isLessonUnlocked, recommendLesson } from '@/lib/analytics';
 import { lessonsFor } from '@/lib/content';
@@ -47,6 +49,22 @@ export default function LearnPage() {
         }
       />
 
+      <FadeUp className="relative mb-7 overflow-hidden rounded-4xl border border-line shadow-card">
+        <Image
+          src="/images/nori-learn.jpg"
+          alt="Nori com uma mochila e um livro na mão, a apontar para o caminho em direção à escola"
+          width={1376}
+          height={768}
+          priority
+          className="h-36 w-full object-cover object-[50%_45%] sm:h-48"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink/75 via-ink/25 to-transparent" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center p-5 sm:p-7">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-sun">O caminho é feito a caminhar</p>
+          <p className="mt-1 max-w-[250px] text-lg font-black leading-snug text-white sm:max-w-xs sm:text-2xl">Uma lição de cada vez — a próxima desbloqueia-se sozinha.</p>
+        </div>
+      </FadeUp>
+
       <div className="card mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Progresso do percurso</p>
@@ -71,13 +89,14 @@ export default function LearnPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <Stagger className="grid gap-4 md:grid-cols-2">
         {visible.map((lesson) => {
           const done = completions.some((item) => item.lessonId === lesson.id);
           const unlocked = isLessonUnlocked(lesson.id, lessons, completions);
           const isRecommended = recommended.id === lesson.id && !done;
           return (
-            <article key={lesson.id} className={`card relative flex flex-col transition ${unlocked ? 'hover:-translate-y-0.5 hover:border-ink/25' : 'opacity-70'}`}>
+            <StaggerItem key={lesson.id}>
+            <article className={`card relative flex h-full flex-col transition ${unlocked ? 'hover:-translate-y-0.5 hover:border-ink/25' : 'opacity-70'}`}>
               {isRecommended && <span className="absolute -top-3 right-4"><Tag tone="sun"><Sparkles size={12} /> Recomendada</Tag></span>}
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -101,25 +120,28 @@ export default function LearnPage() {
                 )}
               </div>
             </article>
+            </StaggerItem>
           );
         })}
-      </div>
+      </Stagger>
 
       <section className="mt-9">
         <SectionTitle title="Como funciona" />
-        <div className="grid gap-3 sm:grid-cols-3">
+        <Stagger className="grid gap-3 sm:grid-cols-3">
           {[
             ['1', 'Aprende o vocabulário', 'Cada lição apresenta palavras e frases com contexto e áudio.'],
             ['2', 'Pratica de verdade', 'Escolha, tradução, ordem das palavras, escuta e leitura.'],
             ['3', 'Guarda e revê', 'As palavras novas vão para o caderno e voltam no momento certo.'],
           ].map(([number, title, text]) => (
-            <div key={number} className="rounded-3xl border border-line bg-white p-5">
+            <StaggerItem key={number}>
+            <div className="h-full rounded-3xl border border-line bg-white p-5">
               <p className="text-sm font-black text-sun-deep">{number}</p>
               <p className="mt-1 font-extrabold">{title}</p>
               <p className="mt-1 text-xs leading-relaxed text-muted">{text}</p>
             </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
     </div>
   );

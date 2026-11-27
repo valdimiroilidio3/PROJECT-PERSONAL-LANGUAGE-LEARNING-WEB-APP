@@ -39,7 +39,7 @@ export function SectionTitle({ title, action }: { title: string; action?: ReactN
 
 export function StatTile({ label, value, hint, icon }: { label: string; value: ReactNode; hint?: string; icon?: ReactNode }) {
   return (
-    <div className="rounded-3xl border border-line bg-white p-4 shadow-card">
+    <div className="h-full rounded-3xl border border-line bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-extrabold uppercase tracking-wider text-muted">{label}</p>
         {icon}
