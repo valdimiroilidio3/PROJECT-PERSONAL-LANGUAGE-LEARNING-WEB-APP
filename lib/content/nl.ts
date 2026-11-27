@@ -68,4 +68,39 @@ export const nlLessons = [
     ],
     'nl',
   ),
+
+  createLesson(
+    {
+      id: 'nl-winkelen',
+      title: 'Winkelen in de winkel',
+      subtitle: 'Faz compras numa loja em neerlandês',
+      objective: 'Pedir um tamanho, uma cor e o preço numa loja.',
+      level: 'A1',
+      category: 'Compras',
+      minutes: 6,
+      xp: 20,
+      vocabulary: [
+        v('de winkel', 'a loja', 'Ik ga naar de winkel.', 'Sítio de compras.'),
+        v('de maat', 'o tamanho', 'Welke maat heeft u?', 'Pergunta na loja.'),
+        v('blauw', 'azul', 'Ik wil blauw.', 'Cor.'),
+        v('proberen', 'experimentar', 'Kan ik dit proberen?', 'Pedido educado.'),
+        v('duur', 'caro', 'Dat is duur.', 'Preço alto.'),
+        v('goedkoop', 'barato', 'Dat is goedkoop.', 'Preço baixo.'),
+      ],
+    },
+    [
+      mc('O que significa “proberen”?', ['pagar', 'experimentar', 'olhar'], 1, '“Proberen” significa experimentar.'),
+      fill('Welke ____ heeft u?', ['maat'], 'Na loja, pergunta-se pelo tamanho: “welke maat”.', 'Que tamanho tem?'),
+      word(['blauw', 'ik', 'wil'], 'Ik wil blauw', 'O sujeito vem antes do verbo.'),
+      match([
+        { term: 'de winkel', translation: 'a loja' },
+        { term: 'de maat', translation: 'o tamanho' },
+        { term: 'duur', translation: 'caro' },
+      ], 'Associa a palavra neerlandesa ao significado.'),
+      translate('Traduz: “Quero azul, por favor.”', ['Ik wil blauw, alsjeblieft', 'Ik wil blauw'], 'Mantém “alsjeblieft” para ser educado.'),
+      read('Hoi, ik ben Sanne. Ik werk in de winkel. Welke maat heeft u? Wij hebben dit in blauw en zwart.', 'Em que cores está disponível?', ['Vermelho e verde', 'Azul e preto', 'Branco e amarelo'], 1, 'O texto diz “in blauw en zwart”.'),
+      sentence('Escreve uma frase a pedir para experimentar a camisa.', 'Começa com “Kan ik…”', ['Kan ik dit proberen?', 'Ik wil dit proberen.'], '“Kan ik dit proberen?” é o pedido educado.'),
+    ],
+    'nl',
+  ),
 ];

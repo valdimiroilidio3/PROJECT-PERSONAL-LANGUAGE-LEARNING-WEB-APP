@@ -37,14 +37,14 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 75 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life) |
+| `npm test` | Runs 81 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue) |
 
 ## What is included
 
-- **Eight learning packs, 31 lessons total**, all authored as validated structured data with real questions, Portuguese explanations and examples:
+- **Eight learning packs, 38 lessons total**, all authored as validated structured data with real questions, Portuguese explanations and examples:
   - English — 16 lessons (A1→B1), the full original curriculum
-  - Spanish — 3 lessons, Dutch — 2, French — 2, German — 2, Italian — 2
-  - JavaScript — 2 lessons, Python — 2 lessons
+  - Spanish — 4 lessons, Dutch — 3, French — 3, German — 3, Italian — 3
+  - JavaScript — 3 lessons, Python — 3 lessons
   - Programming packs use `L1/L2/L3` difficulty labels instead of inventing CEFR levels and have no fake listening/audio exercises.
 - **Progress isolation**: completions, attempts, vocabulary and tutor sessions are tagged with the language id; switching packs never mixes statistics. Backups contain every pack and validate the new fields.
 - **Nine exercise formats**: multiple choice, translation, word ordering, matching, fill-in-the-blank, listening, dialogue completion, sentence construction and reading comprehension.
@@ -53,8 +53,8 @@ npm start
 - **Spaced repetition** with transparent intervals (1, 2, 4, 7, 15, 30, 60, 120 days), priority for new/overdue/frequently missed words, four review grades, per-word history and explicit mastery states.
 - **Speech service** using the Web Speech API with the selected language's locale: voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed; speech controls are hidden for code tracks.
 - **Voice personas and per-language voice selection** in Settings: four speaking styles (automática, Nori energético, Mentor calmo and Expresso) that reshape the system voice, plus a ranked picker of the voices the browser/OS actually exposes per language, with a preview button. Honest empty state when no voice is detected. Fully local; nothing is recorded or transmitted.
-- **Real-life practice** with fifteen scenarios (eight English plus one per additional pack) and keyword-based answer feedback.
-- **Tutor with role-play characters and voice conversation**: each scenario is a realistic character who stays in scene (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana and Dev Ruiz). The action bar has a **Conversa por voz** toggle (only when the browser supports speech synthesis and recognition): speak, the message is transcribed and sent when you stop talking, and the character answers out loud in your chosen voice persona. User messages sent by voice are labelled as browser dictation, and the correction/feedback flow is unchanged. A local **fluency panel** ("Como está a tua fluência") works from the text you wrote or dictated only — words, variety, filler words and average sentence length, plus a one-click difficulty suggestion. It never claims to score pronunciation, accent, intonation or speaking times.
+- **Real-life practice** with twenty-two scenarios (eight English plus two per additional pack) and keyword-based answer feedback.
+- **Tutor with role-play characters and voice conversation**: each scenario is a realistic character who stays in scene (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana, Lucía, Sanne, Théo, Jonas, Giulia and Dev Ruiz). The action bar has a **Conversa por voz** toggle (only when the browser supports speech synthesis and recognition): speak, the message is transcribed and sent when you stop talking, and the character answers out loud in your chosen voice persona. User messages sent by voice are labelled as browser dictation, and the correction/feedback flow is unchanged. A local **fluency panel** ("Como está a tua fluência") works from the text you wrote or dictated only — words, variety, filler words and average sentence length, plus a one-click difficulty suggestion. It never claims to score pronunciation, accent, intonation or speaking times.
 - **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, in-character dialogue (the AI opens the scene when you press "Começar com {personagem}"), suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in, and stay in character with short replies and pronunciation study tips (never pronunciation scores).
 - **Gamification and analytics** derived only from saved activity: XP, streaks, achievements, weekly calendar, session history and personal bests.
 - **Six daily missions**: four fixed (first lesson, ten answers, XP goal, three reviews) plus two rotating ones chosen deterministically by the local calendar day from a pool of seven (practice scenario, correct answers, second lesson, study minutes, listening reps, perfect lesson, notebook words) — always measured from today's saved activity.

@@ -67,4 +67,39 @@ export const frLessons = [
     ],
     'fr',
   ),
+
+  createLesson(
+    {
+      id: 'fr-restaurant',
+      title: 'Au restaurant',
+      subtitle: 'Pede uma comida num restaurante em francês',
+      objective: 'Pedir uma mesa, encomendar um prato e pedir a conta.',
+      level: 'A1',
+      category: 'Comida',
+      minutes: 6,
+      xp: 20,
+      vocabulary: [
+        v('le menu', 'o menu', 'Voici le menu.', 'Lista de pratos.'),
+        v('une table', 'uma mesa', 'Une table pour deux, s’il vous plaît.', 'Pedido de mesa.'),
+        v('commander', 'encomendar', 'Je voudrais commander.', 'Pedir o prato.'),
+        v('l’addition', 'a conta', 'L’addition, s’il vous plaît.', 'Pedido da conta.'),
+        v('un plat', 'um prato', 'Quel est le plat du jour ?', 'Prato.'),
+        v('s’il vous plaît', 'por favor', 'Un café, s’il vous plaît.', 'Forma educada.'),
+      ],
+    },
+    [
+      mc('O que significa “l’addition”?', ['o menu', 'a conta', 'a mesa'], 1, '“L’addition” é a conta do restaurante.'),
+      fill('Une table pour ____, s’il vous plaît.', ['deux'], '“Deux” significa dois.', 'Uma mesa para dois, por favor.'),
+      word(['voudrais', 'je', 'commander'], 'Je voudrais commander', 'Sujeito antes do verbo.'),
+      match([
+        { term: 'le menu', translation: 'o menu' },
+        { term: 'une table', translation: 'uma mesa' },
+        { term: 'l’addition', translation: 'a conta' },
+      ], 'Associa a expressão francesa ao significado.'),
+      listen('Bonjour, une table pour deux, s’il vous plaît.', 'O que a pessoa pediu?', ['Uma mesa para dois', 'Dois cafés', 'A conta'], 0, 'Ouviu-se “une table pour deux”.'),
+      read('Théo : Bonsoir. Voici le menu. Nous avons du poisson et une salade. Cliente : Je voudrais le poisson, s’il vous plaît.', 'O que o cliente pediu?', ['O peixe', 'A salada', 'O café'], 0, 'O cliente diz “Je voudrais le poisson”.'),
+      translate('Traduz: “A conta, por favor.”', ['L’addition, s’il vous plaît'], 'Forma educada de pedir a conta.'),
+    ],
+    'fr',
+  ),
 ];

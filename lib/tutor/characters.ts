@@ -69,10 +69,52 @@ const CHARACTERS: Record<string, ScenarioCharacter> = {
     backstory: 'a close friend planning the weekend; casual tone, short sentences, warm and direct',
     emoji: '☕',
   },
+  'es-cafe': {
+    name: 'Lucía',
+    role: 'a empregada do café La Esquina',
+    backstory: 'the barista at the neighbourhood café La Esquina; takes orders, suggests the toast special and chats about the morning rush',
+    emoji: '☕',
+  },
+  'nl-winkel': {
+    name: 'Sanne',
+    role: 'a vendedora da loja',
+    backstory: 'the shop assistant in a clothing shop in Amsterdam; helps with sizes and colours and points to the till',
+    emoji: '🛍️',
+  },
+  'fr-restaurant': {
+    name: 'Théo',
+    role: 'o empregado do bistrô Chez Théo',
+    backstory: 'a waiter at the family bistro Chez Théo; seats guests, recommends the fish of the day and handles the bill at the end',
+    emoji: '🍽️',
+  },
+  'de-bahnhof': {
+    name: 'Jonas',
+    role: 'o funcionário da bilheteira',
+    backstory: 'the ticket clerk at a small German train station; helps with destinations, seat classes, prices and platform announcements',
+    emoji: '🚉',
+  },
+  'it-mercato': {
+    name: 'Giulia',
+    role: 'a vendedora do mercado',
+    backstory: 'a market vendor selling fresh produce; mentions what is fresh today, weighs the tomatoes and quotes the price per kilo',
+    emoji: '🍅',
+  },
   'js-debug': {
     name: 'Dev Ruiz',
     role: 'a tua colega sénior de programação',
     backstory: 'a senior engineer pair-programming on a tricky JavaScript bug; asks leading questions about types and coercion instead of handing over answers',
+    emoji: '👩‍💻',
+  },
+  'js-arrays': {
+    name: 'Dev Ruiz',
+    role: 'a tua colega sénior de programação',
+    backstory: 'a senior engineer pair-programming on JavaScript array methods; asks what map and filter return instead of handing over answers',
+    emoji: '👩‍💻',
+  },
+  'py-ciclos': {
+    name: 'Dev Ruiz',
+    role: 'a tua colega sénior de programação',
+    backstory: 'a senior engineer pair-programming on Python loops; asks leading questions about range and iteration instead of handing over answers',
     emoji: '👩‍💻',
   },
   'py-debug': {

@@ -231,3 +231,26 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Expansão do catálogo em todos os pacotes — 27 nov 2026 (nona validação)
+
+## O que foi implementado
+
+- **Sete novas lições** (uma por pacote não-inglês), no mesmo formato e validação das existentes: `es-familia` (La familia y los amigos), `nl-winkelen` (Winkelen in de winkel), `fr-restaurant` (Au restaurant), `de-einkauf` (Einkaufen im Supermarkt), `it-ristorante` (Al ristorante), `js-arrays` (Arrays e métodos, L2) e `py-ciclos` (Ciclos for, L2). Cada lição traz vocabulário novo e 6–7 exercícios validados no arranque do módulo.
+- **Sete novos cenários de prática** (um por pacote não-inglês): `es-cafe`, `nl-winkel`, `fr-restaurant`, `de-bahnhof`, `it-mercato`, `js-arrays` e `py-ciclos` — palavras-chave, traduções e modelos alinhados com os prompts.
+- **Tutor offline em personagem nas novas cenas** (aberturas e guião próprio para cada um dos sete cenários) e **novas personagens**: Lucía (café La Esquina), Sanne (loja de Amesterdão), Théo (bistrô Chez Théo), Jonas (bilheteira na estação), Giulia (mercado) e Dev Ruiz (arrays e ciclos).
+- Testes novos: `tests/content-expansion.test.ts` (mínimo de 3 lições e 2 cenários por pacote, consistência prompts/keywords/modelos, personagens e abertura do tutor para os sete cenários novos).
+
+Estado do catálogo: **38 lições e 22 cenários** (inglês 16 lições/8 cenários; espanhol 4/2; os restantes pacotes 3 lições/2 cenários cada).
+
+## Verificação
+
+- `npm run typecheck`, `npm run lint`, `npm test` (**18 ficheiros, 81 testes**) — todos com código 0. `validateLessons` corre no arranque do módulo e é exercida pelos testes.
+- `npm run build` ×2 (12 rotas) — OK nas duas execuções consecutivas.
+- Dev server reiniciado após o build; todas as rotas respondem HTTP 200 (incluindo as sete novas lições).
+- Nota honesta: o e2e em Chromium headless não pôde correr nesta ronda — o sandbox foi recriado e `libnspr4.so`/`libnss3.so`/`libnssutil3.so` não existem no sistema (sem permissão para instalar). Verificação feita por testes de conteúdo, build e arranque de todas as rotas; a próxima validação com browser deve repetir esta ronda no visual.
+- Documentação atualizada (`README.md`: 22 cenários, 81 testes).
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

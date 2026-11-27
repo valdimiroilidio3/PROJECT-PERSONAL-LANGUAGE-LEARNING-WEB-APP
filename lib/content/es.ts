@@ -100,4 +100,39 @@ export const esLessons = [
     ],
     'es',
   ),
+
+  createLesson(
+    {
+      id: 'es-familia',
+      title: 'La familia y los amigos',
+      subtitle: 'Fala da tua família em espanhol',
+      objective: 'Apresentar membros da família e um amigo.',
+      level: 'A1',
+      category: 'Família',
+      minutes: 6,
+      xp: 20,
+      vocabulary: [
+        v('la madre', 'a mãe', 'Mi madre se llama Elena.', 'Parente.'),
+        v('el padre', 'o pai', 'Mi padre trabaja hoy.', 'Parente.'),
+        v('el hermano', 'o irmão', 'Tengo un hermano.', 'Parente.'),
+        v('la hermana', 'a irmã', 'Mi hermana es mayor.', 'Parente.'),
+        v('la familia', 'a família', 'Mi familia vive en Porto.', 'Grupo.'),
+        v('el amigo', 'o amigo', 'Mi amigo vive cerca.', 'Amizade.'),
+      ],
+    },
+    [
+      mc('Como se diz “mãe” em espanhol?', ['el padre', 'la madre', 'el hermano'], 1, '“La madre” significa mãe.'),
+      fill('Mi ____ se llama Elena.', ['madre'], 'Substitua pelo parente certo: la madre = mãe.', 'A minha mãe chama-se Elena.'),
+      word(['madre', 'mi', 'se', 'llama', 'Elena'], 'Mi madre se llama Elena', 'Sujeito antes do verbo; “se llama” apresenta o nome.'),
+      match([
+        { term: 'la madre', translation: 'a mãe' },
+        { term: 'el padre', translation: 'o pai' },
+        { term: 'el amigo', translation: 'o amigo' },
+      ], 'Associa o parente espanhol ao significado.'),
+      dialogue(['¿Quién es?', '____', 'Encantado.'], ['Es mi amigo Luis.', 'Buenos días.', 'Hasta mañana.'], 0, 'Apresenta a pessoa: “Es mi amigo Luis.”'),
+      read('Hola, me llamo Ana. Mi madre se llama Elena y mi padre se llama Carlos. Tengo una hermana.', 'Como se chama a mãe da Ana?', ['Carlos', 'Elena', 'Ana'], 1, 'O texto diz “mi madre se llama Elena”.'),
+      translate('Traduz: “Tenho um irmão.”', ['Tengo un hermano'], '“Tengo un hermano” é a forma direta.'),
+    ],
+    'es',
+  ),
 ];
