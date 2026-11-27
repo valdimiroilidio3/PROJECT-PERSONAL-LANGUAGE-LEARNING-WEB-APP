@@ -117,6 +117,24 @@ export const scenarios: PracticeScenario[] = [
     keywords: [['how', 'you'], ['like', 'coffee', 'meet'], ['time', 'about', 'tomorrow']],
     modelAnswers: ['How are you?', 'Would you like to have coffee?', 'How about tomorrow at ten?'],
   },
+  {
+    id: 'en-networking',
+    languageId: 'en',
+    title: 'Networking no evento',
+    description: 'Conheça profissionais numa feira de emprego e troque contactos básicos.',
+    icon: 'briefcase',
+    category: 'Networking',
+    level: 'A2',
+    prompts: [
+      'Introduce yourself and say what you do.',
+      'Ask about the other person’s role.',
+      'Exchange contact details.',
+    ],
+    translations: ['Apresente-se e diga o que faz.', 'Pergunte sobre o papel da outra pessoa.', 'Troque contactos.'],
+    hints: ['Hi, I’m …, I work as …', 'What do you do?', 'Can I have your email?'],
+    keywords: [['work', 'name', 'im'], ['do', 'role', 'job'], ['email', 'contact', 'card']],
+    modelAnswers: ['Hi, I’m Ana, I work as a designer.', 'What do you do?', 'Can I have your email address?'],
+  },
 ];
 
 export function getScenario(id: string): PracticeScenario | undefined {

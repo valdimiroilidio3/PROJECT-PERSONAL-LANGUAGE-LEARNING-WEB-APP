@@ -254,3 +254,25 @@ Estado do catálogo: **38 lições e 22 cenários** (inglês 16 lições/8 cená
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Simulados, provas e preparação de exames — 27 nov 2026 (décima validação)
+
+## O que foi implementado
+
+- **Simulados A1 (“Simulados”)** em `/exames`: um por língua natural (inglês, espanhol, neerlandês, francês, alemão, italiano), cada um com 10 questões originais de escolha múltipla distribuídas por leitura (passagem partilhada, 4 itens), audição (3 itens, voz do sistema com texto repetível) e vocabulário (3 itens). Perguntas originais baseadas no percurso — não são exames oficiais e não emitem certificado; o resultado é declarado indicativo na interface e no cabeçalho de `lib/exams.ts`.
+- **Simulador de exame completo**: cronómetro estrito de 10 minutos com entrega automática a zero, nota por secção e nota global, patamar de aprovação de 60%, ecrã de resultado com confetti (reduzido a zero se preferires menos animação), XP de 1 por acerto mais 10 de bónus por aprovação, e tentativas gravadas no progresso (`practice`). Pacotes de programação mostram um estado vazio honesto em vez de um exame falso de proficiência.
+- **Oito novas lições de preparação para exames** (uma por pacote): `en-formal-email` (A2, email formal), `es-exam-avisos`, `nl-exam-omroepen`, `fr-exam-annonces`, `de-exam-durchsagen`, `it-exam-annunci` (A2, leitura/audição de avisos e registo formal), `js-exam-previsao` e `py-exam-previsao` (L3, previsão de código, formato de prova técnica). Catálogo: 46 lições (inglês 17; espanhol 5; neerlandês/francês/alemão/italiano 4 cada; JavaScript/Python 4 cada).
+- **Seis novos cenários de prática (A2, credibilidade)**: `en-networking` e cinco entrevistas formais — `es-entrevista`, `nl-sollicitatie`, `fr-entretien`, `de-vorstellungsgespraech`, `it-colloquio` — com tutor offline em personagem (aberturas, guiões, personagens: Priya, Elena Ruiz, Mark, Chloé, Hannah, Marco). Catálogo: 28 cenários (inglês 9; 3 cada nos pacotes naturais restantes; 2 cada nos pacotes de código).
+- **Ligação na interface**: item “Simulados” (GraduationCap) na navegação lateral entre Revisão e Progresso; a XP do topo continua a contar completions + tentativas de prática/revisão, incluindo as tentativas de simulado.
+- Testes: `tests/exams.test.ts` (estrutura dos 6 simulados, unicidade e validade das questões, pontuação por patamar de 60%, bónus de XP, formato "N/M") e `tests/content-expansion.test.ts` alargado (novas lições e cenários). **19 ficheiros, 89 testes.**
+- README atualizado (46 lições, 28 cenários, 89 testes, rota `/exames`, personagens novas).
+
+## Verificação
+
+- `npm run typecheck`, `npm run lint`, `npm test` (19 ficheiros, 89 testes) e `npm run build` (13 rotas, `/exames` estático, 12.7 kB) — todos com código 0.
+- Dev server reiniciado após o build; todas as rotas respondem HTTP 200 (`/`, `/learn`, `/practice`, `/tutor`, `/vocabulary`, `/review`, `/exames`, `/progress`, `/settings`, `/onboarding`).
+- Nota honesta: o e2e em Chromium headless continua indisponível neste sandbox (faltam `libnspr4.so`/`libnss3.so`/`libnssutil3.so`, sem permissão para instalar). Verificação feita por testes unitários/de conteúdo, build e arranque de todas as rotas; a interação completa do simulado (cronómetro, áudio, entrega automática) deve ser repetida no browser na próxima ronda com ambiente completo.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

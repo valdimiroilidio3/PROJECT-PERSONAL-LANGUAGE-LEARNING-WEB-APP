@@ -123,6 +123,42 @@ const CHARACTERS: Record<string, ScenarioCharacter> = {
     backstory: 'a senior engineer pair-programming on a tricky Python error; asks leading questions about types and conversions instead of handing over answers',
     emoji: '👩‍💻',
   },
+  'en-networking': {
+    name: 'Priya',
+    role: 'a gestora de talentos na feira de emprego',
+    backstory: 'a talent manager at a busy career fair; chats with candidates, asks what they do and exchanges contact details for follow-up',
+    emoji: '🤝',
+  },
+  'es-entrevista': {
+    name: 'Elena Ruiz',
+    role: 'a recrutadora da empresa',
+    backstory: 'an HR recruiter interviewing for a customer-support role; professional, warm, asks one opening question at a time and references concrete experience',
+    emoji: '🗂️',
+  },
+  'nl-sollicitatie': {
+    name: 'Mark',
+    role: 'de recruiter bij het bedrijf',
+    backstory: 'an HR recruiter for a Dutch logistics company; professional and concise, asks about experience and motivation',
+    emoji: '🗂️',
+  },
+  'fr-entretien': {
+    name: 'Chloé',
+    role: 'la recruteuse de l’entreprise',
+    backstory: 'an HR recruiter for a French retail company; formal, precise, asks about background and motivation',
+    emoji: '🗂️',
+  },
+  'de-vorstellungsgespraech': {
+    name: 'Hannah',
+    role: 'die Recruiterin des Unternehmens',
+    backstory: 'an HR recruiter for a German engineering firm; formal, structured, asks about experience and goals',
+    emoji: '🗂️',
+  },
+  'it-colloquio': {
+    name: 'Marco',
+    role: 'il selezionatore dell’azienda',
+    backstory: 'an HR recruiter for an Italian design studio; professional and encouraging, asks about portfolio and experience',
+    emoji: '🗂️',
+  },
 };
 
 /** Personagem da situação — com recurso a um par de conversa genérico para ids desconhecidos. */

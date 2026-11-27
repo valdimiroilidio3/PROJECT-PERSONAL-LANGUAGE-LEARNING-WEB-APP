@@ -7,6 +7,7 @@ import {
   BarChart3,
   BookOpen,
   Flame,
+  GraduationCap,
   Home,
   MessageCircle,
   Route,
@@ -30,11 +31,12 @@ const navigation = [
   { href: '/tutor', label: 'Tutor', icon: MessageCircle },
   { href: '/vocabulary', label: 'Vocabulário', icon: BookOpen },
   { href: '/review', label: 'Revisão', icon: Sparkles },
+  { href: '/exames', label: 'Simulados', icon: GraduationCap },
   { href: '/progress', label: 'Progresso', icon: BarChart3 },
   { href: '/settings', label: 'Definições', icon: Settings },
 ];
 
-const bottomNavigation = [navigation[0], navigation[1], navigation[2], navigation[3], navigation[6]];
+const bottomNavigation = [navigation[0], navigation[1], navigation[2], navigation[3], navigation[7]];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

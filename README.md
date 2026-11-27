@@ -37,14 +37,14 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 81 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue) |
+| `npm test` | Runs 89 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue, sample exams) |
 
 ## What is included
 
-- **Eight learning packs, 38 lessons total**, all authored as validated structured data with real questions, Portuguese explanations and examples:
-  - English — 16 lessons (A1→B1), the full original curriculum
-  - Spanish — 4 lessons, Dutch — 3, French — 3, German — 3, Italian — 3
-  - JavaScript — 3 lessons, Python — 3 lessons
+- **Eight learning packs, 46 lessons total**, all authored as validated structured data with real questions, Portuguese explanations and examples:
+  - English — 17 lessons (A1→B1), the full original curriculum plus an exam-style reading/formal-email drill
+  - Spanish — 5 lessons, Dutch — 4, French — 4, German — 4, Italian — 4 (each with a new A2 exam-format drill: notices, announcements and formal register)
+  - JavaScript — 4 lessons, Python — 4 lessons (an L3 code-reading exam drill each)
   - Programming packs use `L1/L2/L3` difficulty labels instead of inventing CEFR levels and have no fake listening/audio exercises.
 - **Progress isolation**: completions, attempts, vocabulary and tutor sessions are tagged with the language id; switching packs never mixes statistics. Backups contain every pack and validate the new fields.
 - **Nine exercise formats**: multiple choice, translation, word ordering, matching, fill-in-the-blank, listening, dialogue completion, sentence construction and reading comprehension.
@@ -53,8 +53,8 @@ npm start
 - **Spaced repetition** with transparent intervals (1, 2, 4, 7, 15, 30, 60, 120 days), priority for new/overdue/frequently missed words, four review grades, per-word history and explicit mastery states.
 - **Speech service** using the Web Speech API with the selected language's locale: voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed; speech controls are hidden for code tracks.
 - **Voice personas and per-language voice selection** in Settings: four speaking styles (automática, Nori energético, Mentor calmo and Expresso) that reshape the system voice, plus a ranked picker of the voices the browser/OS actually exposes per language, with a preview button. Honest empty state when no voice is detected. Fully local; nothing is recorded or transmitted.
-- **Real-life practice** with twenty-two scenarios (eight English plus two per additional pack) and keyword-based answer feedback.
-- **Tutor with role-play characters and voice conversation**: each scenario is a realistic character who stays in scene (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana, Lucía, Sanne, Théo, Jonas, Giulia and Dev Ruiz). The action bar has a **Conversa por voz** toggle (only when the browser supports speech synthesis and recognition): speak, the message is transcribed and sent when you stop talking, and the character answers out loud in your chosen voice persona. User messages sent by voice are labelled as browser dictation, and the correction/feedback flow is unchanged. A local **fluency panel** ("Como está a tua fluência") works from the text you wrote or dictated only — words, variety, filler words and average sentence length, plus a one-click difficulty suggestion. It never claims to score pronunciation, accent, intonation or speaking times.
+- **Real-life practice** with twenty-eight scenarios (nine English plus two–three per additional pack, including A2 formal job interviews in five languages) and keyword-based answer feedback.
+- **Tutor with role-play characters and voice conversation**: each scenario is a realistic character who stays in scene (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana, Lucía, Sanne, Théo, Jonas, Giulia, Dev Ruiz, Priya, Elena Ruiz, Mark, Chloé, Hannah and Marco). The action bar has a **Conversa por voz** toggle (only when the browser supports speech synthesis and recognition): speak, the message is transcribed and sent when you stop talking, and the character answers out loud in your chosen voice persona. User messages sent by voice are labelled as browser dictation, and the correction/feedback flow is unchanged. A local **fluency panel** ("Como está a tua fluência") works from the text you wrote or dictated only — words, variety, filler words and average sentence length, plus a one-click difficulty suggestion. It never claims to score pronunciation, accent, intonation or speaking times.
 - **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, in-character dialogue (the AI opens the scene when you press "Começar com {personagem}"), suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in, and stay in character with short replies and pronunciation study tips (never pronunciation scores).
 - **Gamification and analytics** derived only from saved activity: XP, streaks, achievements, weekly calendar, session history and personal bests.
 - **Six daily missions**: four fixed (first lesson, ten answers, XP goal, three reviews) plus two rotating ones chosen deterministically by the local calendar day from a pool of seven (practice scenario, correct answers, second lesson, study minutes, listening reps, perfect lesson, notebook words) — always measured from today's saved activity.
@@ -68,6 +68,7 @@ npm start
 - **Original illustrations** (Nori's journey for onboarding and OpenGraph, the league podium, the habit garden, Nori at the café counter for practice, Nori at his reading nook for review/empty states, Nori on the summit for progress, Nori on the path for learn and Nori at the chalkboard for lesson intros) were commissioned for Lumio and live in `public/images/`. The mascot remains an inline SVG; no borrowed characters or assets.
 - **Motion feedback**: confetti on correct answers and lesson/practice/review completions, counted-up XP, staggered entrances on grids (practice scenarios), fade-up section entrances, shimmer on progress bars and spring-pop achievement badges — all respecting `prefers-reduced-motion`. Illustrated empty states (review, vocabulary) keep no-data screens friendly instead of blank.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
+- **Sample exams (“Simulados”)**: one original A1 mock exam per natural language (English, Spanish, Dutch, French, German, Italian) at `/exames` — 10 multiple-choice questions across reading (shared passage), listening (system voice, replayable) and vocabulary, a 10-minute strict timer with automatic submission, per-section scoring, an indicative pass mark of 60%, XP (1 per correct answer + 10 pass bonus) and confetti on approval. Every question is original, not taken from any official exam; results are indicative only and never certify anything. Attempts are stored as regular practice attempts. Programming packs get an honest empty state instead of a fake exam.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.
 
 ## Routes
@@ -82,6 +83,7 @@ npm start
 | `/tutor` | Offline-first AI conversation interface |
 | `/vocabulary` | Personal word notebook |
 | `/review` | Spaced-repetition flashcards |
+| `/exames` | Sample A1 exams with timer, per-section scoring and indicative results |
 | `/progress` | Analytics and achievements |
 | `/settings` | Preferences, data management and browser information |
 
@@ -122,6 +124,7 @@ app/                 App Router pages and the server-side tutor API
 components/          Shared UI, AppContext, lesson player, speech controls, mascot, celebration effects (confetti, count-up)
 public/images/       Original Nori illustrations used by onboarding, league, garden, practice, review, vocabulary and progress
 lib/content/         Validated lesson packs and practice scenarios for all eight tracks
+lib/exams.ts         Original sample exams (reading, listening, vocabulary) and scoring
 lib/analytics.ts     Metrics derived from saved events
 lib/scoring.ts       Answer checking and XP rules
 lib/srs.ts           Spaced-repetition scheduling
