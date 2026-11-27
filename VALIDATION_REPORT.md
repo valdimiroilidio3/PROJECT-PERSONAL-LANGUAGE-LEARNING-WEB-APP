@@ -296,3 +296,22 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Simulados na dashboard e na revisão — 27 nov 2026 (décima segunda validação)
+
+## O que foi implementado
+
+- **Dashboard**: novo cartão “Simulados” na barra lateral (a seguir a “Revisão inteligente”) com dados reais — melhor resultado por simulado (nota, `N/N`, tentativas, XP acumulado, estado “Aprovado”/“Por fazer”), barra de progresso e CTA direto (`/exames`). Para pacotes sem simulados (código), uma linha honesta explica a alternativa de exercícios e projetos.
+- **Revisão**: banner compacto com o melhor resultado nos simulados (nível, `N/N`, percentagem) e ligação direta para `/exames`; escondido em pacotes sem simulados.
+- **`examAttemptStats()`** em `lib/exams.ts` — derivada exclusivamente das tentativas guardadas (`<examId>-complete`); parse tolerante a formatos estranhos (ignora-os no cálculo do melhor resultado, mas conta-os como tentativas), `passed` só com patamar ≥ passPercent e pelo menos uma tentativa.
+- Testes: `examAttemptStats` coberto em `tests/exams.test.ts` (tentativas, melhor resultado, XP, última data, patamar). **19 ficheiros, 92 testes.**
+
+## Verificação
+
+- `npm run typecheck`, `npm run lint`, `npm test` (19 ficheiros, 92 testes) e `npm run build` (13 rotas) — todos com código 0.
+- Dev server reiniciado após o build; rotas `/`, `/review`, `/exames` (e restantes) respondem HTTP 200.
+- Nota honesta: o e2e em Chromium headless continua indisponível neste sandbox; o cartão e o banner devem ser confirmados no preview.
+
+## Publicação
+
+`main` publica automaticamente no Vercel a cada merge (confirmado: merge do PR #6 → produção `READY`/`PROMOTED` às 20:33 UTC em https://lumio-english.vercel.app).
