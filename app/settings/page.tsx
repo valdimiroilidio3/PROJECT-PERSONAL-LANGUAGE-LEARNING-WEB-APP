@@ -1,11 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Download, HardDrive, Info, ShieldCheck, Trash2, Upload } from 'lucide-react';
+import { Download, HardDrive, Info, ShieldCheck, Trash2, Upload, Volume2 } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { PageHeader, SectionTitle } from '@/components/ui';
 import { createSnapshot, parseSnapshot } from '@/lib/backup';
 import { languages } from '@/lib/languages';
+import { lessonsFor } from '@/lib/content';
+import {
+  VOICE_PERSONAS,
+  listVoicesFor,
+  preferredVoiceURI,
+  setPreferredVoice,
+  setVoicePersona,
+  speak,
+  voicePersona,
+  type VoiceDescriptor,
+  type VoicePersonaId,
+} from '@/lib/speech';
 import type { LanguageId, LearnerGoal, LearnerLevel } from '@/lib/types';
 
 const levels: { id: LearnerLevel; label: string }[] = [
@@ -29,6 +41,9 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [remoteModes, setRemoteModes] = useState<string[]>([]);
+  const [voices, setVoices] = useState<VoiceDescriptor[]>([]);
+  const [currentPersona, setCurrentPersona] = useState<VoicePersonaId>('auto');
+  const [preferredUri, setPreferredUri] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,6 +52,29 @@ export default function SettingsPage() {
       .then((data: { modes?: string[] }) => setRemoteModes(data.modes ?? []))
       .catch(() => setRemoteModes([]));
   }, []);
+
+  useEffect(() => {
+    setCurrentPersona(voicePersona().id);
+    setPreferredUri(preferredVoiceURI(language.locale));
+    const load = () => setVoices(listVoicesFor(language.locale));
+    load();
+    const timer = window.setTimeout(load, 800);
+    try {
+      window.speechSynthesis?.addEventListener('voiceschanged', load);
+    } catch {
+      /* engines sem evento de vozes — o timeout acima cobre */
+    }
+    return () => {
+      window.clearTimeout(timer);
+      try {
+        window.speechSynthesis?.removeEventListener('voiceschanged', load);
+      } catch {
+        /* ignora */
+      }
+    };
+  }, [language.locale]);
+
+  const samplePhrase = lessonsFor(profile.targetLanguage)[0]?.vocabulary[0]?.example ?? 'Hello, how are you?';
 
   const exportData = () => {
     const snapshot = createSnapshot({ profile, completions: allCompletions, attempts: allAttempts, vocabulary: allVocabulary, sessions: allSessions });
@@ -190,10 +228,90 @@ export default function SettingsPage() {
       </section>
 
       <section className="mt-8">
-        <SectionTitle title="Acessibilidade e voz" />
+        <SectionTitle title="Vozes de leitura" />
+        <div className="card">
+          <p className="text-sm leading-relaxed text-muted">
+            As frases são ditadas pelas vozes que o teu browser e sistema disponibilizam para {language.label.toLowerCase()} (Web Speech API) — nada é enviado para fora do dispositivo. As personas ajustam a altura e a velocidade da voz escolhida; não são gravações adicionais.
+          </p>
+
+          <div className="mt-6">
+            <p className="label">Persona</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {VOICE_PERSONAS.map((persona) => {
+                const active = persona.id === currentPersona;
+                return (
+                  <div key={persona.id} className={`rounded-2xl border p-3 transition ${active ? 'border-ink bg-sun-soft' : 'border-line'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        className="min-w-0 text-left"
+                        aria-pressed={active}
+                        onClick={() => {
+                          setVoicePersona(persona.id);
+                          setCurrentPersona(persona.id);
+                        }}
+                      >
+                        <span className="block text-sm font-extrabold">{persona.label}{active ? ' · ativa' : ''}</span>
+                        <span className="mt-1 block text-xs leading-snug text-muted">{persona.description}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-white text-ink transition hover:bg-sun-soft"
+                        aria-label={`Ouvir persona ${persona.label}`}
+                        onClick={() => void speak(samplePhrase, { lang: language.locale, personaId: persona.id })}
+                      >
+                        <Volume2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <label className="label" htmlFor="voice-select">Voz para {language.label.toLowerCase()}</label>
+            {voices.length === 0 ? (
+              <p className="rounded-2xl bg-cream p-3 text-xs leading-relaxed text-muted">
+                O browser ainda não detetou vozes para esta língua — tenta recarregar a página. Se continuar vazio, as frases simplesmente não tocam; o resto da app funciona na mesma.
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  id="voice-select"
+                  className="input max-w-md"
+                  value={preferredUri ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value || null;
+                    setPreferredVoice(language.locale, value);
+                    setPreferredUri(value);
+                  }}
+                >
+                  <option value="">Automática (recomendada)</option>
+                  {voices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name}{voice.localService ? '' : ' · online'}{voice.isDefault ? ' · predefinida' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="btn-ghost !py-2 text-xs" onClick={() => void speak(samplePhrase, { lang: language.locale })}>
+                  <Volume2 size={14} /> Ouvir voz
+                </button>
+              </div>
+            )}
+            <p className="mt-2 text-xs text-muted">
+              {voices.length === 0
+                ? 'Sem vozes detetadas para esta língua.'
+                : `${voices.length} ${voices.length === 1 ? 'voz detetada' : 'vozes detetadas'} para ${language.label.toLowerCase()}.`} A velocidade lenta (0.75×) está nos controlos de áudio de cada frase.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <SectionTitle title="Microfone e acessibilidade" />
         <div className="card text-sm leading-relaxed text-muted">
-          <p>A síntese de voz usa as vozes disponíveis no teu browser para {language.label.toLowerCase()} (Web Speech API). A velocidade lenta está disponível nos controlos de áudio.</p>
-          <p className="mt-2">O reconhecimento de voz depende de permissão do microfone e de suporte do browser (melhor em Chrome/Edge). Há sempre um campo de texto alternativo. Não oferecemos pontuação fonética automática.</p>
+          <p>O reconhecimento de voz depende de permissão do microfone e de suporte do browser (melhor em Chrome/Edge). Há sempre um campo de texto alternativo. Não oferecemos pontuação fonética automática.</p>
         </div>
       </section>
     </div>

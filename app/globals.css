@@ -27,12 +27,37 @@ body {
   border-radius: 6px;
 }
 
+@keyframes progress-shine {
+  0% { transform: translateX(-100%); }
+  55%, 100% { transform: translateX(100%); }
+}
+
 ::selection {
   background: #ffe500;
   color: #20201d;
 }
 
 @layer components {
+  .progress-fill {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 15%, rgba(255, 255, 255, 0.6) 50%, transparent 85%);
+    transform: translateX(-100%);
+    animation: progress-shine 2.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill::after {
+      animation: none;
+    }
+  }
+
   .card {
     @apply rounded-3xl border border-line bg-white p-5 shadow-card;
   }

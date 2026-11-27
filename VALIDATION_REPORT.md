@@ -136,3 +136,98 @@ Inspirado nos padrões de produto de Duolingo e Tooter, mas com identidade, comp
 
 - Deploy de produção: `dpl_ESqu474PXuNJMm4qZjV2kz5af93C`, commit `8efff13`, estado `READY` com `readySubstate PROMOTED`, alias **https://lumio-english.vercel.app**.
 - Verificação em produção: painel com 5 missões (a quinta “Estuda 10 minutos”), desafios na janela `23/11 – 29/11` e jardim com `0 dias com atividade` para um visitante novo. Nenhuma variável de IA foi adicionada; `GET /api/tutor` continua a devolver `modes: []`.
+
+---
+
+# Mais vida no Lumio — 26 nov 2026 (quinta validação)
+
+Pedido: mais imagens, animações de acerto/erro, mais vozes para ditar as frases e mais missões/tarefas. Tudo 100% local e derivado de atividade guardada.
+
+## Implementado
+
+- **Ilustrações originais do Nori** (comissionadas para o Lumio, sem material de terceiros): jornada ao nascer do sol (`public/images/nori-journey.jpg`, também OG do site), pódio da liga (`nori-league.jpg`) e jardim de hábitos (`nori-garden.jpg`).
+- **Animações com intenção**: explosão de confete no painel de feedback de acerto; abanão curto no cartão e pop no coração ao errar; chuva de confete no ecrã de resultados; XP, acerto e minutos contam a partir de zero até ao valor real (nunca inventado); barras de competências animadas por tipo de exercício; mascote saltita no fim da lição; chama de sequência pulsante no cabeçalho móvel. Tudo respeita `prefers-reduced-motion`.
+- **Vozes de leitura (Definições)**: 4 personas (Automática, Nori energético, Mentor calmo, Expresso) que remodelam a voz do sistema (altura/velocidade) + seletor por língua com as vozes que o browser/SO expõe, ordenadas por correspondência (locale exato > prefixo; vozes locais antes de online; motores completos antes de compactos), pré-escuta e estado vazio honesto. A escolha fica em `localStorage` e aplica-se a todos os botões de ouvir frases (lições, prática, revisão, tutor offline). Nada é gravado nem enviado.
+- **Mais missões**: 6 missões diárias (4 fixas + 2 rotativas de um conjunto de 7 — cenário, respostas certas, segunda lição, minutos de estudo, escutas, lição sem erros, 2 palavras no caderno); desafios da semana mostram agora 4 de 6 objetivos rotativos (XP, dias ativos, respostas, revisões, 45 minutos, 2 lições sem erros); novo **Desafio do mês** (janela de calendário local: 400 XP / 12 dias / 120 respostas / 8 lições, escolhido pelo mês).
+- Metadados OpenGraph com a ilustração da jornada.
+
+## Browser real (Chromium via @sparticuz/chromium)
+
+27/27 verificações PASS, 0 erros de página/consola:
+
+- Painel: 6 missões com contador `0 de 6 concluídas`; Desafio do mês (novembro 2026 → “Responde 120 vezes”); 4 desafios da semana; imagens do pódio e do jardim carregadas; sem overflow horizontal em 390 px. Evidência: `validation/life-dashboard.png`, `validation/life-mobile.png`.
+- Onboarding: banner da jornada renderizado (`naturalWidth > 0`). Evidência: `validation/life-onboarding.png`.
+- Lição `greetings` completa por automação: acerto detetado → confete detetado no painel (`validation/life-feedback-correct.png`); erro → abanão detetado e resposta correta revelada (`validation/life-feedback-wrong.png`); “Tentar novamente” acertou; resumo com `XP recebido` contado até 23 após 1 erro em 7 (`validation/life-summary.png`).
+- Definições: secção “Vozes de leitura”, 4 personas com pré-escuta, estado vazio honesto para vozes (Chromium headless não expõe vozes). Evidência: `validation/life-settings-voices.png`.
+- Lições do Chromium headless não têm vozes do sistema; em Chrome/Edge real aparecem no seletor. O estado vazio não bloqueia nada.
+
+## Automações
+
+`npm ci` (node_modules não vem no snapshot), `npm run typecheck`, `npm run lint`, `npm test` (15 ficheiros, 60 testes) e `npm run build` (12 rotas) — todos com código 0. Novos testes: rotação de 7 variantes de missão em 2 slots, 6 objetivos semanais com novas contagens (minutos, lições perfeitas), janela e contagens do Desafio do mês, ranking/seleção de vozes e personas.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Tutor com personagens e conversa por voz — 27 nov 2026 (sexta validação)
+
+## O que foi implementado
+
+- **Personagens de roleplay** (`lib/tutor/characters.ts`): cada cenário do tutor é interpretado por uma personagem original e distinta (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana, Dev Ruiz), com nome, papel na cena, mini-biografia para o modelo remoto e emoji na interface. O botão "Começar com {personagem}" faz a personagem abrir a cena em voz da conversa.
+- **Conversa por voz** no `/tutor` (apenas quando o browser suporta reconhecimento e síntese e a língua tem voz): toggle "Conversa por voz" na barra da conversa; ao parar de falar, a transcrição é enviada automaticamente; a resposta da personagem é lida em voz alta no sotaque/persona de voz escolhida em Definições. Nas mensagens ditadas aparece o rótulo "Ditado por voz · N palavras · a transcrição vem do browser e não mede pronúncia".
+- **Cartão de fluência local** (`lib/tutor/fluency.ts`, "Como está a tua fluência (texto)"): palavras, variedade lexical, muletas (uh/um/…), tamanho médio/máximo das frases — calculado apenas a partir do texto escrito ou ditado, com sugestões e sugestão de dificuldade com um clique. Nunca avalia pronúncia, sotaque, entoação ou tempos verbais de fala.
+- **Tutor remoto em personagem**: o system prompt manda o modelo interpretar a personagem (sem quebrar a quarta parede), responder em no máximo duas frases curtas e, nas correções, incluir apenas dicas de estudo de pronúncia quando aplicável — nunca classificações.
+- **Abertura offline em personagem**: a conversa começa pela fala de abertura da personagem (fluxo "Começar com"); o modo offline compensa o turno para não repetir a abertura.
+- **Honesto por desenho**: sem gravação, sem rede adicional (quando offline), sem métricas inventadas; o painel declara os limites da análise.
+
+## Verificação
+
+- Chromium (via `@sparticuz/chromium` + `playwright-core`) em desktop e mobile (390 px): toggle de voz ativa e legenda de envio automático visíveis, personagem e abertura renderizadas, correção local de gramática aplicada ("I am agree" → "I agree"), painel de fluência com valores reais a partir do texto ditado/escrito, sem erros de página ou de consola, sem overflow horizontal no mobile. Evidência: `validation/tutor-character.png`, `validation/tutor-mobile.png`.
+- Testes novos em `tests/tutor-fluency.test.ts`: fluência (contagem, variedade, muletas, frases), sugestão de dificuldade (subir/consolidar/neutro), cobertura de personagens para todos os pacotes e cenários, abertura por personagem.
+- `npm run typecheck`, `npm run lint`, `npm test` (16 ficheiros, 71 testes) — todos com código 0.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Vida visual, segunda ronda — 27 nov 2026 (sétima validação)
+
+## O que foi implementado
+
+- **Três novas ilustrações originais** no mesmo estilo de aquarela: `nori-practice.jpg` (Nori atrás do balcão de um café, para a seleção de situações de prática), `nori-review.jpg` (Nori num canto de leitura a jogar com cartões de vocabulário, para o estado vazio da revisão e do caderno e para o fim da sessão de revisão) e `nori-progress.jpg` (Nori no cimo de um monte com bandeira de estrela, no cabeçalho do Progresso).
+- **Entra em cena** (`components/effects.tsx`): `Stagger`/`StaggerItem` (entrada em cascata da grelha de situações), `FadeUp` (secções) e componentes que devolvem `<div>` simples quando `prefers-reduced-motion` está ativo.
+- **EmptyState com ilustração opcional** (`components/ui.tsx`): estado vazio da revisão e do caderno mostram a ilustração; sem ilustração o comportamento anterior mantém-se.
+- **ProgressBar com brilho** (`app/globals.css` + `ui.tsx`): brilho em onda via `::after`, desativado com `prefers-reduced-motion`.
+- **Celebrações**: confetti no ecrã de resultado da prática e no fim da sessão de revisão, check-circle da prática com pop elástico, XP ganho na prática com CountUp, conquistas conquistadas no Progresso com pop elástico escalonado.
+- Testes novos: `tests/life-visual.test.tsx` (ilustração no EmptyState, cascata/FadeUp, papel progressbar).
+
+## Verificação
+
+- Chromium (via `@sparticuz/chromium` + `playwright-core`): hero de prática visível e sem overflow em desktop e 390 px, estados vazios com ilustração, Progresso com ilustração (escondida no mobile por desenho), 0 erros de página/consola. Evidência: `validation/practice-hero.png`, `validation/review-empty.png`, `validation/vocabulary-empty.png`, `validation/progress-life.png`, `validation/life-mobile.png`.
+- `npm run typecheck`, `npm run lint`, `npm test` (17 ficheiros, 75 testes) e `npm run build` (12 rotas) — todos com código 0.
+- Nota: o servidor de desenvolvimento ("Lumio app") foi reiniciado — o `.next/` tinha sido substituído pelo `npm run build` com o dev server ligado.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Vida visual, terceira ronda — 27 nov 2026 (oitava validação)
+
+## O que foi implementado
+
+- **Duas novas ilustrações originais**: `nori-learn.jpg` (Nori com mochila e livro, a caminho da "escola" — hero da página Aprender) e `nori-lesson.jpg` (Nori no quadro a explicar — banner do ecrã de introdução da lição).
+- **Aprender**: hero ilustrado, grelha de lições e secção "Como funciona" entram em cascata.
+- **Intro da lição**: banner da sala de aula no cartão de abertura.
+- **Dashboard**: seis tiles de estatísticas entram em cascata (FadeUp escalonado).
+- **Onboarding**: o passo final "Plano pronto" celebra com confetti e pop elástico do mascote.
+- `StatTile` preenche a altura do contentor para alinhamento uniforme.
+
+## Verificação
+
+- Chromium em desktop e 390 px: hero de Aprender visível (16 lições em cascata), banner da lição visível, botão "Começar lição" presente, dashboard completo sem overflow, 0 erros de página/consola. Evidência: `validation/learn-hero.png`, `validation/lesson-intro.png`, `validation/dashboard-life.png`, `validation/life2-mobile.png`.
+- `npm run typecheck`, `npm run lint`, `npm test` (17 ficheiros, 75 testes) e `npm run build` (12 rotas) — todos com código 0 (uma primeira execução do build falhou transientemente a seguir ao compile e passou à segunda; o dev server foi reiniciado de seguida).
+- Rotas confirmadas com HTTP 200 no dev server após reinício.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

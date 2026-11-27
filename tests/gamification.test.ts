@@ -4,12 +4,15 @@ import {
   deriveDailyQuests,
   deriveHabitGarden,
   deriveLeague,
+  deriveMonthlyChallenge,
   deriveRotatingQuest,
   deriveWeeklyChallenges,
+  monthWindow,
   rotatingQuestIdFor,
+  rotatingQuestIdsFor,
   type RotatingQuestId,
 } from '../lib/gamification';
-import type { Attempt, LessonCompletion, Profile } from '../lib/types';
+import type { Attempt, LessonCompletion, Profile, VocabularyItem } from '../lib/types';
 
 const now = new Date('2026-11-26T12:00:00.000Z');
 const profile: Profile = {
@@ -52,13 +55,33 @@ const attempt = (overrides: Partial<Attempt> = {}): Attempt => ({
   ...overrides,
 });
 
-function input(attempts: Attempt[], completions: LessonCompletion[] = [], at: Date = now) {
+const vocabularyItem = (id: string, createdAt: string): VocabularyItem => ({
+  id,
+  term: `palavra-${id}`,
+  translation: `palavra-${id}`,
+  example: `exemplo ${id}`,
+  context: 'manual',
+  familiarity: 0.2,
+  lastReviewedAt: null,
+  nextReviewAt: createdAt,
+  correctCount: 0,
+  incorrectCount: 0,
+  source: 'manual',
+  createdAt,
+});
+
+function input(
+  attempts: Attempt[],
+  completions: LessonCompletion[] = [],
+  at: Date = now,
+  vocabulary: VocabularyItem[] = [],
+) {
   return {
-    analytics: deriveAnalytics(completions, attempts, [], at),
+    analytics: deriveAnalytics(completions, attempts, vocabulary, at),
     profile,
     completions,
     attempts,
-    vocabulary: [],
+    vocabulary,
     now: at,
   };
 }
@@ -85,10 +108,12 @@ describe('personal leagues', () => {
 describe('daily quests', () => {
   it('reports zero progress when nothing is saved today', () => {
     const quests = deriveDailyQuests(input([]));
-    expect(quests).toHaveLength(5);
+    expect(quests).toHaveLength(6);
     expect(quests.slice(0, 4).every((quest) => quest.progress === 0 && !quest.completed)).toBe(true);
     expect(quests.find((quest) => quest.id === 'xp')?.target).toBe(20);
-    expect(quests.some((quest) => quest.id === rotatingQuestIdFor(now))).toBe(true);
+    const rotating = quests.slice(4);
+    expect(new Set(rotating.map((quest) => quest.id)).size).toBe(2);
+    expect(rotating.every((quest) => quest.progress === 0)).toBe(true);
   });
 
   it('counts only today\'s completions, answers and XP', () => {
@@ -116,42 +141,89 @@ describe('daily quests', () => {
   });
 });
 
-describe('rotating daily quest', () => {
-  it('changes with the calendar day but stays stable for the same day', () => {
-    const ids = fourDays.map((day) => rotatingQuestIdFor(day));
-    expect(new Set(ids).size).toBe(4);
-    expect(rotatingQuestIdFor(fourDays[0])).toBe(ids[0]);
+describe('rotating daily quests', () => {
+  it('offers two distinct quests per day, stable for the same day and changing over time', () => {
+    const ids = fourDays.map((day) => rotatingQuestIdsFor(day));
+    for (const pair of ids) {
+      expect(pair[0]).not.toBe(pair[1]);
+    }
+    expect(rotatingQuestIdsFor(fourDays[0])).toEqual(ids[0]);
+    expect(rotatingQuestIdFor(fourDays[0])).toBe(ids[0][0]);
+    const firstSlots = ids.map((pair) => pair[0]);
+    expect(new Set(firstSlots).size).toBe(4);
   });
 
   it('measures each variant from saved activity only', () => {
-    const expected: RotatingQuestId[] = ['practice-scenario', 'correct-answers', 'second-lesson', 'study-minutes'];
+    const expected: RotatingQuestId[] = [
+      'practice-scenario',
+      'correct-answers',
+      'second-lesson',
+      'study-minutes',
+      'listening-reps',
+      'perfect-lesson',
+      'notebook-words',
+    ];
+    const days = Array.from({ length: 28 }, (_, index) => {
+      const day = localDay(26);
+      day.setDate(day.getDate() + index);
+      return day;
+    });
+
     for (const id of expected) {
-      const day = fourDays.find((candidate) => rotatingQuestIdFor(candidate) === id)!;
+      let targetDay: Date | undefined;
+      let slot: 0 | 1 = 0;
+      for (const day of days) {
+        const ids = rotatingQuestIdsFor(day);
+        if (ids[0] === id) {
+          targetDay = day;
+          slot = 0;
+          break;
+        }
+        if (ids[1] === id) {
+          targetDay = day;
+          slot = 1;
+          break;
+        }
+      }
+      expect(targetDay, `quest ${id} should appear within 28 days`).toBeDefined();
+      const dayIso = targetDay!.toISOString();
+
       let attempts: Attempt[] = [];
       let completions: LessonCompletion[] = [];
+      let vocabulary: VocabularyItem[] = [];
 
       if (id === 'practice-scenario') {
         attempts = [
-          attempt({ timestamp: day.toISOString(), source: 'practice', lessonId: 'scenario-a' }),
-          attempt({ id: 2, timestamp: day.toISOString(), source: 'practice', lessonId: 'scenario-a', exerciseId: 'e2' }),
+          attempt({ timestamp: dayIso, source: 'practice', lessonId: 'scenario-a' }),
+          attempt({ id: 2, timestamp: dayIso, source: 'practice', lessonId: 'scenario-a', exerciseId: 'e2' }),
         ];
       } else if (id === 'correct-answers') {
         attempts = [
           ...Array.from({ length: 5 }, (_, index) =>
-            attempt({ id: index + 1, exerciseId: `e${index + 1}`, timestamp: day.toISOString() }),
+            attempt({ id: index + 1, exerciseId: `e${index + 1}`, timestamp: dayIso }),
           ),
-          attempt({ id: 6, exerciseId: 'e6', timestamp: day.toISOString(), correct: false }),
+          attempt({ id: 6, exerciseId: 'e6', timestamp: dayIso, correct: false }),
         ];
       } else if (id === 'second-lesson') {
         completions = [
-          completion('es-a', day.toISOString()),
-          completion('es-b', day.toISOString()),
+          completion('es-a', dayIso),
+          completion('es-b', dayIso),
         ];
+      } else if (id === 'study-minutes') {
+        completions = [completion('es-a', dayIso, { durationMs: 600_000 })];
+      } else if (id === 'listening-reps') {
+        attempts = [
+          attempt({ timestamp: dayIso, exerciseType: 'listening' }),
+          attempt({ id: 2, timestamp: dayIso, exerciseType: 'listening', exerciseId: 'e2' }),
+          attempt({ id: 3, timestamp: dayIso, exerciseType: 'multiple-choice', exerciseId: 'e3' }),
+        ];
+      } else if (id === 'perfect-lesson') {
+        completions = [completion('es-a', dayIso, { correctCount: 6, totalExercises: 6 })];
       } else {
-        completions = [completion('es-a', day.toISOString(), { durationMs: 600_000 })];
+        vocabulary = [vocabularyItem('v1', dayIso), vocabularyItem('v2', dayIso)];
       }
 
-      const quest = deriveRotatingQuest(input(attempts, completions, day));
+      const quest = deriveRotatingQuest(input(attempts, completions, targetDay!, vocabulary), slot);
       expect(quest.id).toBe(id);
       expect(quest.completed).toBe(true);
 
@@ -159,6 +231,9 @@ describe('rotating daily quest', () => {
       if (id === 'correct-answers') expect(quest.progress).toBe(5);
       if (id === 'second-lesson') expect(quest.progress).toBe(2);
       if (id === 'study-minutes') expect(quest.progress).toBe(10);
+      if (id === 'listening-reps') expect(quest.progress).toBe(2);
+      if (id === 'perfect-lesson') expect(quest.progress).toBe(1);
+      if (id === 'notebook-words') expect(quest.progress).toBe(2);
     }
   });
 });
@@ -168,27 +243,67 @@ describe('weekly challenges', () => {
 
   it('counts only activity inside the Monday-to-Sunday window', () => {
     const attempts = [
-      attempt({ timestamp: localDay(24).toISOString(), source: 'practice' }),
+      attempt({ timestamp: localDay(24).toISOString(), source: 'practice', durationMs: 60_000 }),
       attempt({ id: 2, timestamp: localDay(22).toISOString(), source: 'review' }),
     ];
     const completions = [
-      completion('es-a', localDay(24).toISOString()),
+      completion('es-a', localDay(24).toISOString(), { durationMs: 120_000 }),
       completion('es-old', localDay(22).toISOString()),
     ];
     const { window, challenges } = deriveWeeklyChallenges(input(attempts, completions, midweek));
     expect(window.startKey).toBe('2026-11-23');
     expect(window.endKey).toBe('2026-11-30');
-    expect(challenges).toHaveLength(4);
+    expect(challenges).toHaveLength(6);
     expect(challenges.find((item) => item.id === 'week-answers')?.progress).toBe(1);
     expect(challenges.find((item) => item.id === 'week-reviews')?.progress).toBe(0);
     expect(challenges.find((item) => item.id === 'week-xp')?.progress).toBe(25);
     expect(challenges.find((item) => item.id === 'week-days')?.progress).toBe(1);
+    // Uma lição perfeita (6/6) dentro da semana; a de 22/11 fica fora.
+    expect(challenges.find((item) => item.id === 'week-perfect')?.progress).toBe(1);
+    // 120s da lição + 60s da prática → 3 minutos.
+    expect(challenges.find((item) => item.id === 'week-minutes')?.progress).toBe(3);
   });
 
-  it('keeps three visible challenges with zero values for a new learner', () => {
+  it('keeps all challenges at zero for a new learner', () => {
     const { challenges } = deriveWeeklyChallenges(input([], [], midweek));
-    expect(challenges).toHaveLength(4);
+    expect(challenges).toHaveLength(6);
     expect(challenges.every((challenge) => challenge.progress === 0 && !challenge.completed)).toBe(true);
+  });
+});
+
+describe('monthly challenge', () => {
+  const midMonth = localDay(26);
+
+  it('measures only activity inside the calendar month', () => {
+    const attempts = [
+      attempt({ timestamp: localDay(24).toISOString() }),
+      attempt({ id: 2, timestamp: '2026-10-31T10:00:00.000Z' }),
+    ];
+    const completions = [
+      completion('es-a', localDay(24).toISOString()),
+      completion('es-old', '2026-10-31T10:00:00.000Z'),
+    ];
+    const monthly = deriveMonthlyChallenge(input(attempts, completions, midMonth));
+    expect(monthly.monthLabel).toMatch(/2026/);
+    expect(monthly.target).toBeGreaterThan(0);
+    // Novembro (tentativas: 1 de 2; XP: 25 de 50; lições: 1 de 2; dias ativos: 1) — o que conta para o desafio do mês reflete só novembro.
+    if (monthly.id === 'month-answers') expect(monthly.progress).toBe(1);
+    else if (monthly.id === 'month-xp') expect(monthly.progress).toBe(25);
+    else if (monthly.id === 'month-lessons') expect(monthly.progress).toBe(1);
+    else expect(monthly.progress).toBe(1); // month-days: um dia ativo em novembro
+  });
+
+  it('starts at zero for a new learner', () => {
+    const monthly = deriveMonthlyChallenge(input([], [], midMonth));
+    expect(monthly.progress).toBe(0);
+    expect(monthly.completed).toBe(false);
+    expect(monthly.monthLabel.toLowerCase()).toContain('novembro');
+  });
+
+  it('gives a whole-month window with correct boundaries', () => {
+    const window = monthWindow(new Date(2026, 0, 15));
+    expect(window.startKey).toBe('2026-01-01');
+    expect(window.endKey).toBe('2026-02-01');
   });
 });
 

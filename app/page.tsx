@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useMemo } from 'react';
 import {
   ArrowRight,
@@ -16,11 +17,12 @@ import { motion } from 'framer-motion';
 import { Mascot } from '@/components/Mascot';
 import { useApp } from '@/components/AppContext';
 import { EmptyState, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
+import { FadeUp } from '@/components/effects';
 import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/lib/analytics';
 import { getNextStep } from '@/lib/recommendations';
 import { lessonsFor, scenariosFor } from '@/lib/content';
 import { isOverdue } from '@/lib/srs';
-import { deriveDailyQuests, deriveHabitGarden, deriveLeague, deriveWeeklyChallenges } from '@/lib/gamification';
+import { deriveDailyQuests, deriveHabitGarden, deriveLeague, deriveMonthlyChallenge, deriveWeeklyChallenges } from '@/lib/gamification';
 
 export default function DashboardPage() {
   const { profile, language, completions, attempts, vocabulary } = useApp();
@@ -44,6 +46,10 @@ export default function DashboardPage() {
   const garden = useMemo(
     () => deriveHabitGarden({ completions, attempts }),
     [completions, attempts],
+  );
+  const monthly = useMemo(
+    () => deriveMonthlyChallenge({ analytics, profile, completions, attempts, vocabulary }),
+    [analytics, profile, completions, attempts, vocabulary],
   );
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
@@ -93,17 +99,23 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile label="Sequência" value={`${analytics.streak} dias`} hint="Dias consecutivos com atividade" icon={<Flame size={17} className="text-danger" />} />
-        <StatTile label="XP total" value={analytics.totalXp} hint="Lições, prática e revisões" icon={<Trophy size={17} className="text-sun-deep" />} />
-        <StatTile label="Estudo" value={`${analytics.studyMinutes} min`} hint="Tempo guardado nas sessões" icon={<Clock3 size={17} className="text-muted" />} />
-        <StatTile label="Lições" value={analytics.completedLessons} hint={`de ${lessons.length} disponíveis`} icon={<CheckCircle2 size={17} className="text-success" />} />
-        <StatTile label="Precisão" value={`${analytics.accuracy}%`} hint={`${analytics.totalAttempts} respostas`} icon={<CheckCircle2 size={17} className="text-success" />} />
-        <StatTile label="Palavras" value={vocabulary.length} hint={`${overdue.length} para revisar`} icon={<BookOpen size={17} className="text-muted" />} />
+        {[
+          { label: 'Sequência', value: `${analytics.streak} dias`, hint: 'Dias consecutivos com atividade', delay: 0, icon: <Flame size={17} className="text-danger" /> },
+          { label: 'XP total', value: analytics.totalXp, hint: 'Lições, prática e revisões', delay: 1, icon: <Trophy size={17} className="text-sun-deep" /> },
+          { label: 'Estudo', value: `${analytics.studyMinutes} min`, hint: 'Tempo guardado nas sessões', delay: 2, icon: <Clock3 size={17} className="text-muted" /> },
+          { label: 'Lições', value: analytics.completedLessons, hint: `de ${lessons.length} disponíveis`, delay: 3, icon: <CheckCircle2 size={17} className="text-success" /> },
+          { label: 'Precisão', value: `${analytics.accuracy}%`, hint: `${analytics.totalAttempts} respostas`, delay: 4, icon: <CheckCircle2 size={17} className="text-success" /> },
+          { label: 'Palavras', value: vocabulary.length, hint: `${overdue.length} para revisar`, delay: 5, icon: <BookOpen size={17} className="text-muted" /> },
+        ].map((tile) => (
+          <FadeUp key={tile.label} delay={tile.delay * 0.05} className="h-full">
+            <StatTile label={tile.label} value={tile.value} hint={tile.hint} icon={tile.icon} />
+          </FadeUp>
+        ))}
       </section>
 
       <section>
         <SectionTitle title="Missões de hoje" action={<span className="text-xs font-bold text-muted">{quests.filter((quest) => quest.completed).length} de {quests.length} concluídas</span>} />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           {quests.map((quest) => (
             <Link
               key={quest.id}
@@ -123,7 +135,7 @@ export default function DashboardPage() {
           ))}
         </div>
         <p className="mt-2 text-[11px] text-muted">
-          A quinta missão muda todos os dias. Todo o progresso vem apenas de atividade guardada neste browser.
+          As duas últimas missões mudam todos os dias. Todo o progresso vem apenas de atividade guardada neste browser.
         </p>
       </section>
 
@@ -140,6 +152,13 @@ export default function DashboardPage() {
             </p>
             <div className="mt-3"><ProgressBar value={league.progress} max={league.target} /></div>
           </div>
+          <Image
+            src="/images/nori-league.jpg"
+            alt="Nori no pódio com o troféu ao alto"
+            width={1024}
+            height={1024}
+            className="hidden h-28 w-28 shrink-0 rounded-3xl border border-line object-cover sm:block"
+          />
         </div>
         <div className="rounded-4xl border border-line bg-white p-5 shadow-card">
           <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Como funcionam as ligas</p>
@@ -152,6 +171,25 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      <section className="relative overflow-hidden rounded-4xl bg-ink text-white shadow-card">
+        <div className="absolute -left-10 -bottom-12 h-44 w-44 rounded-full bg-sun/15 blur-2xl" aria-hidden />
+        <div className="relative flex flex-wrap items-center gap-5 p-5 sm:p-6">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-sun text-ink" aria-hidden>
+            <Trophy size={30} />
+          </span>
+          <div className="min-w-[220px] flex-1">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-sun">Desafio do mês · {monthly.monthLabel}</p>
+            <h2 className="mt-1 text-2xl font-black">{monthly.title}</h2>
+            <p className="mt-1 text-sm leading-relaxed text-white/70">{monthly.description}</p>
+            <div className="mt-3 max-w-md"><ProgressBar value={monthly.progress} max={monthly.target} /></div>
+            <p className="mt-2 text-[11px] font-extrabold text-white/60">{monthly.progress} / {monthly.target} {monthly.unit}{monthly.completed ? ' · concluído' : ''}</p>
+          </div>
+          <Link href={monthly.href} className="btn-primary shrink-0">
+            {monthly.completed ? 'Repetir' : 'Começar'} <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="card min-w-0">
           <SectionTitle
@@ -159,7 +197,7 @@ export default function DashboardPage() {
             action={<span className="text-xs font-bold text-muted">{weekly.window.label}</span>}
           />
           <div className="space-y-3">
-            {weekly.challenges.slice(0, 3).map((challenge) => (
+            {weekly.challenges.slice(0, 4).map((challenge) => (
               <Link
                 key={challenge.id}
                 href={challenge.href}
@@ -177,12 +215,21 @@ export default function DashboardPage() {
             ))}
           </div>
           <p className="mt-3 text-[11px] text-muted">
-            A semana começa à segunda-feira. Não há penalização por dias sem atividade.
+            A semana começa à segunda-feira. Quatro desafios de cada vez; dois alternam semanalmente. Não há penalização por dias sem atividade.
           </p>
         </div>
 
         <div className="card min-w-0">
-          <SectionTitle title="Jardim de hábitos" />
+          <div className="flex items-start justify-between gap-3">
+            <SectionTitle title="Jardim de hábitos" />
+            <Image
+              src="/images/nori-garden.jpg"
+              alt="Nori a regar plantas que nascem de livros abertos"
+              width={1024}
+              height={1024}
+              className="-mt-2 h-20 w-20 shrink-0 rounded-2xl border border-line object-cover"
+            />
+          </div>
           <div className="grid grid-cols-7 gap-1.5" aria-label="Atividade dos últimos 28 dias">
             {garden.days.map((day) => {
               const dateLabel = new Date(`${day.key}T12:00:00`).toLocaleDateString('pt-PT', {

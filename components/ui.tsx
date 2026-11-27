@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,7 +39,7 @@ export function SectionTitle({ title, action }: { title: string; action?: ReactN
 
 export function StatTile({ label, value, hint, icon }: { label: string; value: ReactNode; hint?: string; icon?: ReactNode }) {
   return (
-    <div className="rounded-3xl border border-line bg-white p-4 shadow-card">
+    <div className="h-full rounded-3xl border border-line bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-extrabold uppercase tracking-wider text-muted">{label}</p>
         {icon}
@@ -53,14 +54,35 @@ export function ProgressBar({ value, max, color = 'bg-sun' }: { value: number; m
   const percent = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
-      <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${percent}%` }} />
+      <div
+        className={`progress-fill h-full rounded-full transition-all duration-500 ${color}`}
+        style={{ width: `${percent}%` }}
+      />
     </div>
   );
 }
 
-export function EmptyState({ title, description, href, linkLabel }: { title: string; description: string; href?: string; linkLabel?: string }) {
+export function EmptyState({
+  title,
+  description,
+  href,
+  linkLabel,
+  illustration,
+}: {
+  title: string;
+  description: string;
+  href?: string;
+  linkLabel?: string;
+  /** Ilustração original (gerada localmente) mostrada acima do texto. */
+  illustration?: { src: string; alt: string };
+}) {
   return (
     <div className="rounded-3xl border border-dashed border-line bg-white/60 p-8 text-center">
+      {illustration && (
+        <div className="mx-auto mb-5 max-w-xs overflow-hidden rounded-2xl border border-line bg-cream shadow-card">
+          <Image src={illustration.src} alt={illustration.alt} width={640} height={400} className="h-36 w-full object-cover object-center sm:h-44" />
+        </div>
+      )}
       <h3 className="text-base font-black">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">{description}</p>
       {href && linkLabel && (

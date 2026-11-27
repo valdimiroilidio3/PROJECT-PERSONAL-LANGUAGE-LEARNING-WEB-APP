@@ -3,7 +3,14 @@ import type { Attempt, LessonCompletion, Profile, VocabularyItem } from './types
 
 const DAY_MS = 86_400_000;
 
-export type RotatingQuestId = 'practice-scenario' | 'correct-answers' | 'second-lesson' | 'study-minutes';
+export type RotatingQuestId =
+  | 'practice-scenario'
+  | 'correct-answers'
+  | 'second-lesson'
+  | 'study-minutes'
+  | 'listening-reps'
+  | 'perfect-lesson'
+  | 'notebook-words';
 export type QuestId = 'first-lesson' | 'answers' | 'xp' | 'review' | RotatingQuestId;
 
 export interface Quest {
@@ -53,25 +60,40 @@ function dayNumber(key: string): number {
   return Math.floor(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / DAY_MS);
 }
 
-const ROTATING_ORDER: RotatingQuestId[] = ['practice-scenario', 'correct-answers', 'second-lesson', 'study-minutes'];
+const ROTATING_ORDER: RotatingQuestId[] = [
+  'practice-scenario',
+  'correct-answers',
+  'second-lesson',
+  'study-minutes',
+  'listening-reps',
+  'perfect-lesson',
+  'notebook-words',
+];
+
+/** Duas missões extra por dia, determinísticas pela data local — nunca dependem de recompensas guardadas. */
+export function rotatingQuestIdsFor(now: Date = new Date()): [RotatingQuestId, RotatingQuestId] {
+  const index = dayNumber(dateKey(now)) % ROTATING_ORDER.length;
+  return [ROTATING_ORDER[index], ROTATING_ORDER[(index + 3) % ROTATING_ORDER.length]];
+}
 
 /** Rotation is deterministic by local calendar day; it never depends on stored rewards. */
 export function rotatingQuestIdFor(now: Date = new Date()): RotatingQuestId {
-  return ROTATING_ORDER[dayNumber(dateKey(now)) % ROTATING_ORDER.length];
+  return rotatingQuestIdsFor(now)[0];
 }
 
-/** A changing quest measured only from activity saved for the current day. */
-export function deriveRotatingQuest(input: GamificationInput): Quest {
-  const { profile, completions, attempts, now = new Date() } = input;
+/** Uma missão extra do dia, medida apenas a partir de atividade guardada — em `slot` 0 ou 1 (as duas do dia). */
+export function deriveRotatingQuest(input: GamificationInput, slot: 0 | 1 = 0): Quest {
+  const { profile, completions, attempts, vocabulary, now = new Date() } = input;
   const today = dateKey(now);
   const attemptsToday = attempts.filter((item) => dateKey(item.timestamp) === today);
-  const lessonsToday = completions.filter((item) => dateKey(item.completedAt) === today).length;
+  const completionsToday = completions.filter((item) => dateKey(item.completedAt) === today);
+  const lessonsToday = completionsToday.length;
   const minutesToday = Math.round(
     buildEvents(completions, attempts)
       .filter((event) => dateKey(event.date) === today)
       .reduce((sum, event) => sum + event.durationMs, 0) / 60_000,
   );
-  const id = rotatingQuestIdFor(now);
+  const id = rotatingQuestIdsFor(now)[slot];
 
   let title = '';
   let description = '';
@@ -98,6 +120,27 @@ export function deriveRotatingQuest(input: GamificationInput): Quest {
     description = 'Cada lição guardada como concluída conta uma vez.';
     target = 2;
     unit = 'lições';
+  } else if (id === 'listening-reps') {
+    progress = attemptsToday.filter((item) => item.exerciseType === 'listening').length;
+    title = 'Ouve e responde 2 vezes';
+    description = 'Exercícios de escuta respondidos hoje contam — a transcrição aparece na correção.';
+    target = 2;
+    unit = 'escutas';
+    href = '/learn';
+  } else if (id === 'perfect-lesson') {
+    progress = completionsToday.filter((item) => item.totalExercises > 0 && item.correctCount === item.totalExercises).length;
+    title = 'Fecha uma lição sem erros';
+    description = 'Uma lição com todas as respostas certas, guardada hoje, conta uma vez.';
+    target = 1;
+    unit = 'lição perfeita';
+    href = '/learn';
+  } else if (id === 'notebook-words') {
+    progress = vocabulary.filter((item) => dateKey(item.createdAt) === today).length;
+    title = 'Guarda 2 palavras no caderno';
+    description = 'Palavras adicionadas hoje ao teu caderno — das lições ou à mão.';
+    target = 2;
+    unit = 'palavras';
+    href = '/vocabulary';
   } else {
     progress = minutesToday;
     title = `Estuda ${profile.dailyGoalMinutes} minutos`;
@@ -109,7 +152,7 @@ export function deriveRotatingQuest(input: GamificationInput): Quest {
   return makeQuest(id, title, description, progress, target, unit, href);
 }
 
-/** Core quests plus one deterministic rotating quest. No rewards are invented. */
+/** Quatro missões fixas mais duas extra, determinísticas pela data. Nenhuma recompensa é inventada. */
 export function deriveDailyQuests(input: GamificationInput): Quest[] {
   const { analytics, profile, completions, attempts, vocabulary, now = new Date() } = input;
   const today = dateKey(now);
@@ -132,7 +175,8 @@ export function deriveDailyQuests(input: GamificationInput): Quest[] {
       'revisões',
       '/review',
     ),
-    deriveRotatingQuest(input),
+    deriveRotatingQuest(input, 0),
+    deriveRotatingQuest(input, 1),
   ];
 }
 
@@ -181,7 +225,13 @@ export function deriveLeague(totalXp: number): League {
   };
 }
 
-export type WeeklyChallengeId = 'week-xp' | 'week-days' | 'week-answers' | 'week-reviews';
+export type WeeklyChallengeId =
+  | 'week-xp'
+  | 'week-days'
+  | 'week-answers'
+  | 'week-reviews'
+  | 'week-minutes'
+  | 'week-perfect';
 
 export interface WeeklyChallenge {
   id: WeeklyChallengeId;
@@ -251,9 +301,25 @@ const WEEKLY_TEMPLATES: Array<Omit<WeeklyChallenge, 'progress' | 'completed'>> =
     unit: 'revisões',
     href: '/review',
   },
+  {
+    id: 'week-minutes',
+    title: 'Estuda 45 minutos',
+    description: 'Minutos somados de lições, prática e revisões guardadas esta semana.',
+    target: 45,
+    unit: 'minutos',
+    href: '/learn',
+  },
+  {
+    id: 'week-perfect',
+    title: 'Fecha 2 lições sem erros',
+    description: 'Lições com todas as respostas certas. Sem bónus — só a tua precisão real.',
+    target: 2,
+    unit: 'lições perfeitas',
+    href: '/learn',
+  },
 ];
 
-/** Weekly order rotates, but the three numbers always come from this week's saved activity. */
+/** Weekly order rotates, but the four shown numbers always come from this week's saved activity. */
 export function deriveWeeklyChallenges(input: GamificationInput): {
   window: WeekWindow;
   challenges: WeeklyChallenge[];
@@ -267,11 +333,17 @@ export function deriveWeeklyChallenges(input: GamificationInput): {
   const events = buildEvents(completions, attempts).filter((event) => inWeek(event.date));
   const attemptsInWeek = attempts.filter((attempt) => inWeek(attempt.timestamp));
   const activeDays = new Set(events.filter((event) => event.xp > 0 || event.durationMs > 0).map((event) => dateKey(event.date))).size;
+  const minutesInWeek = Math.round(events.reduce((sum, event) => sum + event.durationMs, 0) / 60_000);
+  const perfectLessons = completions.filter(
+    (item) => inWeek(item.completedAt) && item.totalExercises > 0 && item.correctCount === item.totalExercises,
+  ).length;
   const measures: Record<WeeklyChallengeId, number> = {
     'week-xp': events.reduce((sum, event) => sum + event.xp, 0),
     'week-days': activeDays,
     'week-answers': attemptsInWeek.length,
     'week-reviews': attemptsInWeek.filter((attempt) => attempt.source === 'review').length,
+    'week-minutes': minutesInWeek,
+    'week-perfect': perfectLessons,
   };
   const offset = Math.floor(dayNumber(window.startKey) / 7);
   const challenges = WEEKLY_TEMPLATES.map((_, index) => WEEKLY_TEMPLATES[(index + offset) % WEEKLY_TEMPLATES.length]).map(
@@ -282,6 +354,106 @@ export function deriveWeeklyChallenges(input: GamificationInput): {
     }),
   );
   return { window, challenges };
+}
+
+export type MonthlyChallengeId = 'month-xp' | 'month-days' | 'month-answers' | 'month-lessons';
+
+export interface MonthlyChallenge {
+  id: MonthlyChallengeId;
+  title: string;
+  description: string;
+  progress: number;
+  target: number;
+  unit: string;
+  completed: boolean;
+  href: string;
+  monthLabel: string;
+}
+
+export interface MonthWindow {
+  start: Date;
+  startExclusive: Date;
+  startKey: string;
+  endKey: string;
+  label: string;
+}
+
+/** Local calendar month, so month numbers match the learner's calendar. */
+export function monthWindow(now: Date = new Date()): MonthWindow {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endExclusive = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const label = start.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+  return {
+    start,
+    startExclusive: endExclusive,
+    startKey: dateKey(start),
+    endKey: dateKey(endExclusive),
+    label,
+  };
+}
+
+const MONTHLY_TEMPLATES: Array<Omit<MonthlyChallenge, 'progress' | 'completed' | 'monthLabel'>> = [
+  {
+    id: 'month-xp',
+    title: 'Junta 400 XP este mês',
+    description: 'Todo o XP de lições, prática e revisões guardado no mês conta.',
+    target: 400,
+    unit: 'XP',
+    href: '/learn',
+  },
+  {
+    id: 'month-days',
+    title: 'Estuda em 12 dias do mês',
+    description: 'Dias com pelo menos uma atividade guardada. Dias sem estudo não retiram nada.',
+    target: 12,
+    unit: 'dias',
+    href: '/learn',
+  },
+  {
+    id: 'month-answers',
+    title: 'Responde 120 vezes',
+    description: 'Respostas de lições, prática e revisão guardadas no mês.',
+    target: 120,
+    unit: 'respostas',
+    href: '/practice',
+  },
+  {
+    id: 'month-lessons',
+    title: 'Conclui 8 lições',
+    description: 'Lições completadas no mês, nesta língua ou linguagem.',
+    target: 8,
+    unit: 'lições',
+    href: '/learn',
+  },
+];
+
+/** Um desafio grande por mês, escolhido pelo calendário local; o progresso é sempre real e guardado. */
+export function deriveMonthlyChallenge(input: GamificationInput): MonthlyChallenge {
+  const { completions, attempts, now = new Date() } = input;
+  const window = monthWindow(now);
+  const inMonth = (timestamp: string) => {
+    const key = dateKey(timestamp);
+    return key >= window.startKey && key < window.endKey;
+  };
+  const events = buildEvents(completions, attempts).filter((event) => inMonth(event.date));
+  const attemptsInMonth = attempts.filter((attempt) => inMonth(attempt.timestamp));
+  const activeDays = new Set(
+    events.filter((event) => event.xp > 0 || event.durationMs > 0).map((event) => dateKey(event.date)),
+  ).size;
+  const monthIndex = now.getFullYear() * 12 + now.getMonth();
+  const template = MONTHLY_TEMPLATES[monthIndex % MONTHLY_TEMPLATES.length];
+  const measures: Record<MonthlyChallengeId, number> = {
+    'month-xp': events.reduce((sum, event) => sum + event.xp, 0),
+    'month-days': activeDays,
+    'month-answers': attemptsInMonth.length,
+    'month-lessons': completions.filter((item) => inMonth(item.completedAt)).length,
+  };
+  return {
+    ...template,
+    monthLabel: window.label,
+    progress: Math.max(0, Math.min(measures[template.id], template.target)),
+    completed: measures[template.id] >= template.target,
+  };
 }
 
 export interface HabitDay {

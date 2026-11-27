@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
   BarChart3,
   BookOpen,
@@ -95,7 +96,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-black tracking-tight">Lumio</span>
         </Link>
         <div className="flex items-center gap-2 text-xs font-extrabold">
-          <span className="pill bg-white text-muted" title={`${streakDays} dias consecutivos`}><Flame size={13} className="text-danger" /> {streakDays}</span>
+          <motion.span
+            className="pill bg-white text-muted"
+            title={`${streakDays} dias consecutivos`}
+            animate={streakDays > 0 ? { scale: [1, 1.22, 1] } : { scale: 1 }}
+            transition={streakDays > 0 ? { repeat: Infinity, duration: 1.9, ease: 'easeInOut' } : undefined}
+          >
+            <Flame size={13} className="text-danger" /> {streakDays}
+          </motion.span>
           <span className="pill bg-white" title={`Liga ${league.name}`}>{league.emblem}</span>
           <span className="pill bg-sun"><Trophy size={13} /> {xp} XP</span>
           <Link href="/settings" className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white" aria-label="Definições">

@@ -1,8 +1,11 @@
 'use client';
 
 import { Award, BarChart3, Clock3, Info, Trophy } from 'lucide-react';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { useApp } from '@/components/AppContext';
 import { EmptyState, PageHeader, ProgressBar, SectionTitle, StatTile, Tag } from '@/components/ui';
+import { popIn } from '@/components/effects';
 import { deriveAchievements, deriveAnalytics } from '@/lib/analytics';
 import { accuracyPercent } from '@/lib/scoring';
 import { getLesson } from '@/lib/content';
@@ -20,6 +23,15 @@ export default function ProgressPage() {
         eyebrow="Estatísticas reais"
         title={`O teu progresso em ${language.label.toLowerCase()}`}
         description="Tudo o que vês aqui vem das tuas lições, respostas e revisões guardadas neste browser."
+        action={
+          <Image
+            src="/images/nori-progress.jpg"
+            alt="Nori no cimo de um monte, com uma bandeira de estrela a assinalar a subida"
+            width={1024}
+            height={1024}
+            className="hidden h-36 w-36 shrink-0 rounded-3xl border border-line object-cover object-[50%_20%] shadow-card sm:block"
+          />
+        }
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -77,17 +89,28 @@ export default function ProgressPage() {
       <section className="mt-8">
         <SectionTitle title="Conquistas" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {achievements.map((badge) => (
-            <div key={badge.id} className={`rounded-3xl border p-5 ${badge.earned ? 'border-sun bg-sun-soft' : 'border-line bg-white'}`}>
-              <div className="flex items-start justify-between gap-3">
-                <Award size={22} className={badge.earned ? 'text-sun-deep' : 'text-line'} />
-                {badge.earned && <Tag tone="green">Conquistada</Tag>}
+          {achievements.map((badge, index) =>
+            badge.earned ? (
+              <motion.div key={badge.id} {...popIn(index * 0.05)} className="rounded-3xl border border-sun bg-sun-soft p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <Award size={22} className="text-sun-deep" />
+                  <Tag tone="green">Conquistada</Tag>
+                </div>
+                <p className="mt-3 font-black">{badge.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">{badge.description}</p>
+                <p className="mt-3 text-xs font-extrabold">{badge.progress}</p>
+              </motion.div>
+            ) : (
+              <div key={badge.id} className="rounded-3xl border border-line bg-white p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <Award size={22} className="text-line" />
+                </div>
+                <p className="mt-3 font-black">{badge.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">{badge.description}</p>
+                <p className="mt-3 text-xs font-extrabold">{badge.progress}</p>
               </div>
-              <p className="mt-3 font-black">{badge.title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted">{badge.description}</p>
-              <p className="mt-3 text-xs font-extrabold">{badge.progress}</p>
-            </div>
-          ))}
+            ),
+          )}
         </div>
       </section>
 

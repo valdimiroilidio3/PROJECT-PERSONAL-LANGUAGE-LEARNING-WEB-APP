@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useApp } from '@/components/AppContext';
 import { Mascot } from '@/components/Mascot';
 import { SpeakControl } from '@/components/Speech';
+import { Confetti, popIn } from '@/components/effects';
 import { EmptyState, PageHeader, ProgressBar, Tag } from '@/components/ui';
 import { masteryStatus, reviewPriority, reviewVocabulary, type ReviewQuality } from '@/lib/srs';
 import type { VocabularyItem } from '@/lib/types';
@@ -91,7 +92,13 @@ export default function ReviewPage() {
       />
 
       {vocabulary.length === 0 ? (
-        <EmptyState title="Ainda não há palavras para rever" description="Conclui a primeira lição ou adiciona palavras manualmente. Elas entram na revisão no próprio dia." href="/learn" linkLabel="Ir para as lições" />
+        <EmptyState
+          title="Ainda não há palavras para rever"
+          description="Conclui a primeira lição ou adiciona palavras manualmente. Elas entram na revisão no próprio dia."
+          href="/learn"
+          linkLabel="Ir para as lições"
+          illustration={{ src: '/images/nori-review.jpg', alt: 'Nori num canto de leitura, a segurar cartões de vocabulário no ar' }}
+        />
       ) : (
         <>
           <div className="mb-5 flex flex-wrap gap-2">
@@ -149,8 +156,9 @@ export default function ReviewPage() {
               <p className="mt-4 flex items-center gap-2 text-center text-xs text-muted"><Sparkles size={14} /> Cada revisão atualiza a próxima data com base na tua resposta.</p>
             </div>
           ) : (
-            <div className="card text-center">
-              <Mascot className="mx-auto h-28 w-28" mood="celebrate" />
+            <div className="card relative overflow-hidden text-center">
+              <Confetti mode="rain" count={36} />
+              <motion.div {...popIn(0.05)}><Mascot className="mx-auto h-28 w-28" mood="celebrate" /></motion.div>
               <CheckCircle2 className="mx-auto mt-2 text-success" size={28} />
               <h2 className="mt-3 text-2xl font-black">Sessão concluída</h2>
               <p className="mt-2 text-sm text-muted">Revisaste {reviewed} {reviewed === 1 ? 'palavra' : 'palavras'} nesta ronda.</p>
