@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Check, CircleCheck } from 'lucide-react';
 import { Mascot } from '@/components/Mascot';
@@ -74,6 +75,18 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      {step === 0 && (
+        <div className="relative mb-6 overflow-hidden rounded-4xl border border-line shadow-card">
+          <Image
+            src="/images/nori-journey.jpg"
+            alt="Nori, a mascote do Lumio, a percorrer um caminho de livros e letras ao nascer do sol"
+            width={1376}
+            height={768}
+            priority
+            className="h-36 w-full object-cover sm:h-44"
+          />
+        </div>
+      )}
       <div className="mb-8 flex items-center gap-3">
         <Mascot className="h-16 w-16 shrink-0" mood={step === totalSteps - 1 ? 'celebrate' : 'wink'} />
         <div className="flex-1">

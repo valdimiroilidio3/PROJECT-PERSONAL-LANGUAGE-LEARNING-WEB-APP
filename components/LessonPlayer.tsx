@@ -2,12 +2,13 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle2, Heart, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from './AppContext';
 import { Mascot } from './Mascot';
 import { SpeakControl } from './Speech';
 import { ProgressBar, Tag } from './ui';
+import { Confetti, CountUp } from './effects';
 import { levelLabel } from '@/lib/languages';
 import { correctAnswerOf, isExerciseCorrect, accuracyPercent, type SubmittedAnswer } from '@/lib/scoring';
 import type { Exercise, Lesson, LessonMistake } from '@/lib/types';
@@ -17,7 +18,10 @@ interface Feedback {
   answer: string;
   explanation: string;
   correctAnswer: string;
+  praise: string;
 }
+
+const PRAISE = ['Correto!', 'Excelente!', 'É isso mesmo!', 'Boa!', 'Resposta certa!', 'Muito bem!'];
 
 interface SkillStat {
   label: string;
@@ -66,6 +70,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const startedAt = useRef(Date.now());
   const lessonStartedAt = useRef(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
+  const cardControls = useAnimation();
 
   const exercise = lesson.exercises[index];
   const mistakesMade = Object.values(results.current).filter((correct) => !correct).length;
@@ -95,11 +100,16 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
     if (!exercise || feedback) return;
     const correct = isExerciseCorrect(exercise, answer);
     results.current[exercise.id] = correct;
+    if (!correct) {
+      // Abalo curto no cartão do exercício — feedback físico sem punir.
+      void cardControls.start({ x: [0, -14, 12, -9, 6, 0], transition: { duration: 0.45 } });
+    }
     setFeedback({
       correct,
       answer: answerLabel(answer),
       explanation: exercise.explanation,
       correctAnswer: correctAnswerOf(exercise),
+      praise: PRAISE[Math.floor(Math.random() * PRAISE.length)],
     });
     pendingAttempts.current.push(recordAttempt({
       lessonId: lesson.id,
@@ -239,15 +249,18 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   if (phase === 'summary' && summary) {
     return (
       <div className="mx-auto max-w-2xl">
-        <div className="card overflow-hidden text-center">
-          <Mascot className="mx-auto h-32 w-32" mood="celebrate" />
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-muted">Lição concluída</p>
+        <div className="card relative overflow-hidden text-center">
+          <Confetti mode="rain" />
+          <motion.div animate={{ y: [0, -16, 0] }} transition={{ duration: 0.65, repeat: 2, ease: 'easeOut' }}>
+            <Mascot className="mx-auto h-32 w-32" mood="celebrate" />
+          </motion.div>
+          <p className="mt-2 text-xs font-extrabold uppercase tracking-[0.18em] text-muted">Lição concluída</p>
           <h1 className="mt-2 text-3xl font-black">Muito bem!</h1>
           <p className="mt-2 text-sm text-muted">Os teus resultados ficaram guardados neste browser.</p>
           <div className="mt-6 grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-sun-soft p-4"><p className="text-2xl font-black">{summary.xp}</p><p className="text-xs font-bold text-muted">XP recebido</p></div>
-            <div className="rounded-2xl bg-success-soft p-4"><p className="text-2xl font-black">{accuracyPercent(summary.correct, summary.total)}%</p><p className="text-xs font-bold text-muted">acerto</p></div>
-            <div className="rounded-2xl bg-cream p-4"><p className="text-2xl font-black">{Math.max(1, Math.round(summary.durationMs / 60_000))}</p><p className="text-xs font-bold text-muted">minutos</p></div>
+            <div className="rounded-2xl bg-sun-soft p-4"><p className="text-2xl font-black"><CountUp value={summary.xp} /></p><p className="text-xs font-bold text-muted">XP recebido</p></div>
+            <div className="rounded-2xl bg-success-soft p-4"><p className="text-2xl font-black"><CountUp value={accuracyPercent(summary.correct, summary.total)} />%</p><p className="text-xs font-bold text-muted">acerto</p></div>
+            <div className="rounded-2xl bg-cream p-4"><p className="text-2xl font-black"><CountUp value={Math.max(1, Math.round(summary.durationMs / 60_000))} /></p><p className="text-xs font-bold text-muted">minutos</p></div>
           </div>
           {summary.xp === 0 && <p className="mt-4 rounded-2xl bg-cream p-3 text-xs text-muted">Esta lição já tinha sido concluída, por isso não atribui XP duplicado.</p>}
           <div className="mt-7 flex flex-col gap-2 sm:flex-row">
@@ -260,15 +273,25 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
           <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Revisão da sessão</p>
           <h2 className="mt-1 text-lg font-black">O que aconteceu aqui</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {summary.skills.map((skill) => (
-              <div key={skill.label} className="rounded-2xl bg-cream p-3">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span>{skill.label}</span>
-                  <span className="text-muted">{skill.correct}/{skill.total} · {Math.round((skill.correct / skill.total) * 100)}%</span>
+            {summary.skills.map((skill, index) => {
+              const percent = skill.total > 0 ? Math.round((skill.correct / skill.total) * 100) : 0;
+              return (
+                <div key={skill.label} className="rounded-2xl bg-cream p-3">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span>{skill.label}</span>
+                    <span className="text-muted">{skill.correct}/{skill.total} · {percent}%</span>
+                  </div>
+                  <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={skill.correct} aria-valuemin={0} aria-valuemax={skill.total} aria-label={`Precisão em ${skill.label}`}>
+                    <motion.div
+                      className={`h-full rounded-full ${skill.correct === skill.total ? 'bg-success' : 'bg-sun'}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percent}%` }}
+                      transition={{ duration: 0.7, delay: 0.3 + index * 0.09, ease: 'easeOut' }}
+                    />
+                  </div>
                 </div>
-                <div className="mt-2"><ProgressBar value={skill.correct} max={skill.total} color={skill.correct === skill.total ? 'bg-success' : 'bg-sun'} /></div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
             <p className="text-xs text-muted">{summary.mistakes.length} {summary.mistakes.length === 1 ? 'ponto guardado' : 'pontos guardados'} para revisar mais tarde.</p>
@@ -302,13 +325,14 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
       <div className="mb-5 flex items-center gap-4">
         <Link href="/learn" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-white hover:bg-cream" aria-label="Sair da lição"><X size={17} /></Link>
         <div className="flex-1"><ProgressBar value={index} max={lesson.exercises.length} /></div>
-        <div className="flex items-center gap-1 text-sm font-extrabold" aria-label={`${hearts} corações restantes`}>
+        <motion.div key={hearts} className="flex items-center gap-1 text-sm font-extrabold" aria-label={`${hearts} corações restantes`} initial={{ scale: 1.45 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 380, damping: 15 }}>
           {[0, 1, 2].map((value) => <Heart key={value} size={18} className={value < hearts ? 'fill-danger text-danger' : 'text-line'} />)}
-        </div>
+        </motion.div>
       </div>
       <p className="mb-3 text-xs font-extrabold uppercase tracking-wider text-muted">Exercício {index + 1} de {lesson.exercises.length}</p>
 
-      <motion.div key={exercise.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card">
+      <motion.div animate={cardControls}>
+      <motion.div key={exercise.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card relative">
         <h1 className="text-xl font-black leading-snug">{exercise.prompt}</h1>
 
         {exercise.type === 'listening' && language.speech && (
@@ -433,8 +457,16 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         )}
 
         {feedback && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`mt-5 rounded-2xl border p-4 ${feedback.correct ? 'border-success/30 bg-success-soft' : 'border-danger/30 bg-danger-soft'}`} role="status" aria-live="polite">
-            <p className="flex items-center gap-2 font-black">{feedback.correct ? <><CheckCircle2 size={18} className="text-success" /> Correto!</> : <><X size={18} className="text-danger" /> Ainda não é desta</>}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: feedback.correct ? 0.92 : 1 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 20 }}
+            className={`relative mt-5 overflow-hidden rounded-2xl border p-4 ${feedback.correct ? 'border-success/30 bg-success-soft' : 'border-danger/30 bg-danger-soft'}`}
+            role="status"
+            aria-live="polite"
+          >
+            {feedback.correct && <Confetti mode="burst" />}
+            <p className="flex items-center gap-2 font-black">{feedback.correct ? <><CheckCircle2 size={18} className="text-success" /> {feedback.praise}</> : <><X size={18} className="text-danger" /> Ainda não é desta</>}</p>
             {!feedback.correct && <p className="mt-2 text-sm">Resposta correta: <strong>{feedback.correctAnswer}</strong></p>}
             <p className="mt-2 text-sm leading-relaxed text-muted">{feedback.explanation}</p>
             {additionalExample(lesson, exercise) && (
@@ -464,6 +496,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
             Já usaste os três corações desta lição. Podes continuar à mesma — os erros só reduzem o bónus de precisão, não bloqueiam a lição.
           </p>
         )}
+      </motion.div>
       </motion.div>
 
       <div className="mt-4 flex items-center justify-between text-xs text-muted">

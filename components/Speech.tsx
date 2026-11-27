@@ -30,8 +30,8 @@ export function SpeakControl({ text, compact = false }: { text: string; compact?
         type="button"
         onClick={() => void play()}
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white text-ink transition hover:border-ink/30 hover:bg-sun-soft"
-        aria-label={speaking ? 'A reproduzir áudio' : 'Ouvir a frase em inglês'}
-        title="Ouvir em inglês"
+        aria-label={speaking ? 'A reproduzir áudio' : 'Ouvir a frase'}
+        title="Ouvir a frase"
       >
         <Volume2 size={16} className={speaking ? 'animate-pulse' : ''} />
       </button>

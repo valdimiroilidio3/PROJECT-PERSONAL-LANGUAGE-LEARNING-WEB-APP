@@ -136,3 +136,35 @@ Inspirado nos padrões de produto de Duolingo e Tooter, mas com identidade, comp
 
 - Deploy de produção: `dpl_ESqu474PXuNJMm4qZjV2kz5af93C`, commit `8efff13`, estado `READY` com `readySubstate PROMOTED`, alias **https://lumio-english.vercel.app**.
 - Verificação em produção: painel com 5 missões (a quinta “Estuda 10 minutos”), desafios na janela `23/11 – 29/11` e jardim com `0 dias com atividade` para um visitante novo. Nenhuma variável de IA foi adicionada; `GET /api/tutor` continua a devolver `modes: []`.
+
+---
+
+# Mais vida no Lumio — 26 nov 2026 (quinta validação)
+
+Pedido: mais imagens, animações de acerto/erro, mais vozes para ditar as frases e mais missões/tarefas. Tudo 100% local e derivado de atividade guardada.
+
+## Implementado
+
+- **Ilustrações originais do Nori** (comissionadas para o Lumio, sem material de terceiros): jornada ao nascer do sol (`public/images/nori-journey.jpg`, também OG do site), pódio da liga (`nori-league.jpg`) e jardim de hábitos (`nori-garden.jpg`).
+- **Animações com intenção**: explosão de confete no painel de feedback de acerto; abanão curto no cartão e pop no coração ao errar; chuva de confete no ecrã de resultados; XP, acerto e minutos contam a partir de zero até ao valor real (nunca inventado); barras de competências animadas por tipo de exercício; mascote saltita no fim da lição; chama de sequência pulsante no cabeçalho móvel. Tudo respeita `prefers-reduced-motion`.
+- **Vozes de leitura (Definições)**: 4 personas (Automática, Nori energético, Mentor calmo, Expresso) que remodelam a voz do sistema (altura/velocidade) + seletor por língua com as vozes que o browser/SO expõe, ordenadas por correspondência (locale exato > prefixo; vozes locais antes de online; motores completos antes de compactos), pré-escuta e estado vazio honesto. A escolha fica em `localStorage` e aplica-se a todos os botões de ouvir frases (lições, prática, revisão, tutor offline). Nada é gravado nem enviado.
+- **Mais missões**: 6 missões diárias (4 fixas + 2 rotativas de um conjunto de 7 — cenário, respostas certas, segunda lição, minutos de estudo, escutas, lição sem erros, 2 palavras no caderno); desafios da semana mostram agora 4 de 6 objetivos rotativos (XP, dias ativos, respostas, revisões, 45 minutos, 2 lições sem erros); novo **Desafio do mês** (janela de calendário local: 400 XP / 12 dias / 120 respostas / 8 lições, escolhido pelo mês).
+- Metadados OpenGraph com a ilustração da jornada.
+
+## Browser real (Chromium via @sparticuz/chromium)
+
+27/27 verificações PASS, 0 erros de página/consola:
+
+- Painel: 6 missões com contador `0 de 6 concluídas`; Desafio do mês (novembro 2026 → “Responde 120 vezes”); 4 desafios da semana; imagens do pódio e do jardim carregadas; sem overflow horizontal em 390 px. Evidência: `validation/life-dashboard.png`, `validation/life-mobile.png`.
+- Onboarding: banner da jornada renderizado (`naturalWidth > 0`). Evidência: `validation/life-onboarding.png`.
+- Lição `greetings` completa por automação: acerto detetado → confete detetado no painel (`validation/life-feedback-correct.png`); erro → abanão detetado e resposta correta revelada (`validation/life-feedback-wrong.png`); “Tentar novamente” acertou; resumo com `XP recebido` contado até 23 após 1 erro em 7 (`validation/life-summary.png`).
+- Definições: secção “Vozes de leitura”, 4 personas com pré-escuta, estado vazio honesto para vozes (Chromium headless não expõe vozes). Evidência: `validation/life-settings-voices.png`.
+- Lições do Chromium headless não têm vozes do sistema; em Chrome/Edge real aparecem no seletor. O estado vazio não bloqueia nada.
+
+## Automações
+
+`npm ci` (node_modules não vem no snapshot), `npm run typecheck`, `npm run lint`, `npm test` (15 ficheiros, 60 testes) e `npm run build` (12 rotas) — todos com código 0. Novos testes: rotação de 7 variantes de missão em 2 slots, 6 objetivos semanais com novas contagens (minutos, lições perfeitas), janela e contagens do Desafio do mês, ranking/seleção de vozes e personas.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

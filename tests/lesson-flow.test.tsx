@@ -110,7 +110,7 @@ describe('real lesson flow with persisted data', () => {
     expect(
       latest?.attempts.some((attempt) => attempt.correct === false && attempt.userAnswer === 'Resposta deliberadamente errada'),
     ).toBe(true);
-    expect(screen.getByText(/19/)).toBeTruthy();
+    expect(await screen.findByText('19', undefined, { timeout: 5000 })).toBeTruthy();
 
     // Simulate a full page reload: new provider instance reading the same IndexedDB database.
     first.unmount();

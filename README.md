@@ -37,7 +37,7 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 49 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification and weekly routines) |
+| `npm test` | Runs 60 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking) |
 
 ## What is included
 
@@ -52,16 +52,19 @@ npm start
 - **Vocabulary notebook** with automatic import from lessons, manual entries, search, filters and editing.
 - **Spaced repetition** with transparent intervals (1, 2, 4, 7, 15, 30, 60, 120 days), priority for new/overdue/frequently missed words, four review grades, per-word history and explicit mastery states.
 - **Speech service** using the Web Speech API with the selected language's locale: voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed; speech controls are hidden for code tracks.
+- **Voice personas and per-language voice selection** in Settings: four speaking styles (automática, Nori energético, Mentor calmo and Expresso) that reshape the system voice, plus a ranked picker of the voices the browser/OS actually exposes per language, with a preview button. Honest empty state when no voice is detected. Fully local; nothing is recorded or transmitted.
 - **Real-life practice** with fifteen scenarios (eight English plus one per additional pack) and keyword-based answer feedback.
 - **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in.
 - **Gamification and analytics** derived only from saved activity: XP, streaks, achievements, weekly calendar, session history and personal bests.
-- **Daily quests** computed from today's real completions, attempts, XP and reviews — no invented rewards or rivals.
+- **Six daily missions**: four fixed (first lesson, ten answers, XP goal, three reviews) plus two rotating ones chosen deterministically by the local calendar day from a pool of seven (practice scenario, correct answers, second lesson, study minutes, listening reps, perfect lesson, notebook words) — always measured from today's saved activity.
 - **Personal leagues** (Bronze → Diamante) based only on the learner's own saved XP, with clear thresholds and progress to the next tier.
 - **Session review** after each lesson: accuracy by exercise type, saved mistakes and a direct link to the review notebook.
-- **Rotating daily quest**: a fifth mission changes deterministically with the local calendar day (practice scenario, correct answers, second lesson or study minutes) and is measured only from today's saved activity.
-- **Weekly challenges**: three of four rotating goals (weekly XP, active days, answers or reviews) shown with a Monday-to-Sunday window; all values come from that week's saved events.
+- **Weekly challenges**: four of six rotating goals (weekly XP, active days, answers, reviews, 45 study minutes, two flawless lessons) shown with a Monday-to-Sunday window; all values come from that week's saved events.
+- **Monthly challenge**: one large monthly goal chosen by the local calendar (400 XP, 12 active days, 120 answers or 8 lessons), measured only from this month's saved events.
 - **Habit garden**: 28 calendar days with real saved activity only. Empty days are never penalised and never reduce XP, league or achievements.
+- **Motion feedback**: confetti burst on correct answers, a short card shake plus the lost heart pop on mistakes, bouncing mascot and counted-up XP/accuracy/minutes on the summary screen, animated skill bars and a pulsing streak flame — all respecting `prefers-reduced-motion`.
 - **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
+- **Original illustrations** (Nori's journey for onboarding and OpenGraph, the league podium and the habit garden) were commissioned for Lumio and live in `public/images/`. The mascot remains an inline SVG; no borrowed characters or assets.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.
 
@@ -114,7 +117,8 @@ Notes:
 
 ```text
 app/                 App Router pages and the server-side tutor API
-components/          Shared UI, AppContext, lesson player, speech controls, mascot
+components/          Shared UI, AppContext, lesson player, speech controls, mascot, celebration effects (confetti, count-up)
+public/images/       Original Nori illustrations used by onboarding, league, garden and OpenGraph
 lib/content/         Validated lesson packs and practice scenarios for all eight tracks
 lib/analytics.ts     Metrics derived from saved events
 lib/scoring.ts       Answer checking and XP rules
@@ -134,7 +138,7 @@ tests/               Unit tests
 
 ## Offline resources
 
-Fonts use the local system/Inter stack (no Google Fonts request), the mascot is an inline SVG, icons are bundled from `lucide-react`, and lessons/scenarios are TypeScript data in `lib/content/`. The learning flow makes no network requests. Only the optional tutor adapters in `app/api/tutor/route.ts` can reach external endpoints, and they are disabled unless environment variables are configured.
+Fonts use the local system/Inter stack (no Google Fonts request), the mascot is an inline SVG, illustrations are local JPGs bundled in `public/images/`, icons are bundled from `lucide-react`, and lessons/scenarios are TypeScript data in `lib/content/`. The learning flow makes no network requests. Only the optional tutor adapters in `app/api/tutor/route.ts` can reach external endpoints, and they are disabled unless environment variables are configured.
 
 ## Design system
 
