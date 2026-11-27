@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXAMS, examAttemptStats, examFor, examsFor, parseExamScore, scoreExam } from '../lib/exams';
+import { EXAMS, examAttemptHistory, examAttemptStats, examFor, examsFor, parseExamScore, scoreExam } from '../lib/exams';
 import type { LanguageId } from '../lib/types';
 
 const naturalPacks: LanguageId[] = ['en', 'es', 'nl', 'fr', 'de', 'it'];
@@ -168,5 +168,25 @@ it('examAttemptStats: tentativas, melhor resultado, XP, patamar e última data',
     ]);
     expect(failing.passed).toBe(false);
     expect(failing.bestPercent).toBe(50);
+  });
+it('examAttemptHistory: mais recentes primeiro, ignora formatos estranhos e respeita o limite', () => {
+    const exam = EXAMS[0];
+    const attempts = [
+      { exerciseId: `${exam.id}-complete`, userAnswer: '5/10', xpAwarded: 5, timestamp: '2026-11-20T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-complete`, userAnswer: '9/10', xpAwarded: 19, timestamp: '2026-11-25T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-complete`, userAnswer: 'estranho', xpAwarded: 0, timestamp: '2026-11-26T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-complete`, userAnswer: '6/10', xpAwarded: 6, timestamp: '2026-11-22T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-q3`, userAnswer: 'ignorado', xpAwarded: 0, timestamp: '2026-11-27T10:00:00.000Z' },
+    ];
+    const history = examAttemptHistory(exam, attempts, 2);
+    expect(history.length).toBe(2);
+    expect(history[0].timestamp).toBe('2026-11-25T10:00:00.000Z');
+    expect(history[0].percent).toBe(90);
+    expect(history[0].correct).toBe(9);
+    expect(history[1].timestamp).toBe('2026-11-22T10:00:00.000Z');
+    expect(history[1].percent).toBe(60);
+    const all = examAttemptHistory(exam, attempts, 10);
+    expect(all.length).toBe(3);
+    expect(all.map((record) => record.timestamp)).toEqual(['2026-11-25T10:00:00.000Z', '2026-11-22T10:00:00.000Z', '2026-11-20T10:00:00.000Z']);
   });
 });

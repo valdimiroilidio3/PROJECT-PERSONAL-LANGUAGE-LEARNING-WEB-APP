@@ -315,3 +315,22 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 `main` publica automaticamente no Vercel a cada merge (confirmado: merge do PR #6 → produção `READY`/`PROMOTED` às 20:33 UTC em https://lumio-english.vercel.app).
+
+# Simulados na página de Progresso — 27 nov 2026 (décima terceira validação)
+
+## O que foi implementado
+
+- **Secção “Simulados”** na página de progresso (entre Conquistas e Histórico de sessões): um cartão por simulado disponível no pacote (A1 em todos os naturais; A2 em EN/ES) com percentagem máxima, melhor resultado `N/N`, nº de tentativas, XP acumulado, selo “Aprovado”/“Em treino”/“Por fazer”, patamar exigido, as **últimas 4 tentativas** (data, `N/N`, %, XP, Aprovado/Não aprovado vs. o patamar real do exame) e CTA direto para `/exames`. Pacotes de código veem um estado vazio honesto; a nota “Resultados indicativos…” acompanha a secção.
+- **`examAttemptHistory()`** em `lib/exams.ts` — tentativas completas normalizadas (mais recentes primeiro, formatos estranhos ignorados, limite configurável); coberto por teste.
+- Testes: novo caso para `examAttemptHistory` (ordenação, ignorar registos estranhos, limite). **19 ficheiros, 93 testes.**
+- README atualizado (93 testes; secção Simulados no progresso).
+
+## Verificação
+
+- `npm run typecheck`, `npm run lint`, `npm test` (19 ficheiros, 93 testes) e `npm run build` (13 rotas, `/progress` 6.4 kB) — todos com código 0.
+- Dev server reiniciado após o build; rotas `/`, `/progress`, `/review`, `/exames` respondem HTTP 200.
+- Nota honesta: o e2e em Chromium headless continua indisponível neste sandbox; a nova secção deve ser confirmada no preview.
+
+## Publicação
+
+`main` publica automaticamente no Vercel a cada merge (confirmado nas últimas rondas).
