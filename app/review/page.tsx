@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, GraduationCap, RotateCcw, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '@/components/AppContext';
 import { Mascot } from '@/components/Mascot';
@@ -10,6 +10,7 @@ import { SpeakControl } from '@/components/Speech';
 import { Confetti, popIn } from '@/components/effects';
 import { EmptyState, PageHeader, ProgressBar, Tag } from '@/components/ui';
 import { masteryStatus, reviewPriority, reviewVocabulary, type ReviewQuality } from '@/lib/srs';
+import { examsFor, examAttemptStats } from '@/lib/exams';
 import type { VocabularyItem } from '@/lib/types';
 
 type Mode = 'priority' | 'due' | 'new';
@@ -22,13 +23,22 @@ const qualityLabels: { id: ReviewQuality; label: string; detail: string; style: 
 ];
 
 export default function ReviewPage() {
-  const { language, vocabulary, updateVocabulary, recordAttempt } = useApp();
+  const { language, vocabulary, attempts, updateVocabulary, recordAttempt } = useApp();
   const [mode, setMode] = useState<Mode>('priority');
   const [queue, setQueue] = useState<VocabularyItem[] | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [reviewed, setReviewed] = useState(0);
   const [busy, setBusy] = useState(false);
   const shownAt = useRef(Date.now());
+
+  const examStats = useMemo(
+    () => examsFor(language.id).map((exam) => examAttemptStats(exam, attempts)),
+    [language.id, attempts],
+  );
+  const bestExam = useMemo(
+    () => examStats.filter((stats) => stats.attempts > 0).sort((a, b) => b.bestPercent - a.bestPercent)[0],
+    [examStats],
+  );
 
   const candidates = useMemo(() => {
     const now = Date.now();
@@ -90,6 +100,23 @@ export default function ReviewPage() {
         description="As palavras voltam em intervalos cada vez maiores. Nem todas aparecem no mesmo dia — a prioridade vai para as novas, atrasadas e mais erradas."
         action={<Link href="/vocabulary" className="btn-ghost">Ver caderno</Link>}
       />
+
+      {examStats.length > 0 && (
+        <aside className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-white p-4 shadow-card">
+          <div className="flex min-w-[240px] items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sun-soft text-sun-deep"><GraduationCap size={20} /></span>
+            <div>
+              <p className="text-sm font-extrabold">Simulados no formato de exame</p>
+              <p className="text-xs text-muted">
+                {bestExam
+                  ? `Melhor resultado: Simulado ${bestExam.level} · ${bestExam.bestCorrect}/${bestExam.total} (${bestExam.bestPercent}%)`
+                  : 'Ainda sem tentativas — leitura, audição e vocabulário com tempo.'}
+              </p>
+            </div>
+          </div>
+          <Link href="/exames" className="btn-ghost !px-4 !py-2 text-xs">Ir para os simulados <ArrowRight size={13} /></Link>
+        </aside>
+      )}
 
       {vocabulary.length === 0 ? (
         <EmptyState

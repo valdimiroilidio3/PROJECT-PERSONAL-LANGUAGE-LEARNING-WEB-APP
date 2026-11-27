@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock3,
   Flame,
+  GraduationCap,
   Lock,
   Sparkles,
   Trophy,
@@ -21,6 +22,7 @@ import { FadeUp } from '@/components/effects';
 import { dateKey, deriveAnalytics, isLessonUnlocked, recommendLesson } from '@/lib/analytics';
 import { getNextStep } from '@/lib/recommendations';
 import { lessonsFor, scenariosFor } from '@/lib/content';
+import { examsFor, examAttemptStats } from '@/lib/exams';
 import { isOverdue } from '@/lib/srs';
 import { deriveDailyQuests, deriveHabitGarden, deriveLeague, deriveMonthlyChallenge, deriveWeeklyChallenges } from '@/lib/gamification';
 
@@ -50,6 +52,10 @@ export default function DashboardPage() {
   const monthly = useMemo(
     () => deriveMonthlyChallenge({ analytics, profile, completions, attempts, vocabulary }),
     [analytics, profile, completions, attempts, vocabulary],
+  );
+  const examStats = useMemo(
+    () => examsFor(profile.targetLanguage).map((exam) => examAttemptStats(exam, attempts)),
+    [profile.targetLanguage, attempts],
   );
   const xpGoal = profile.dailyGoalMinutes * 2;
   const overdue = vocabulary.filter((item) => isOverdue(item));
@@ -333,6 +339,42 @@ export default function DashboardPage() {
               </div>
             </div>
             <Link href="/review" className="btn-ghost mt-4 w-full">Ir para revisão</Link>
+          </section>
+
+          <section className="card">
+            <SectionTitle
+              title="Simulados"
+              action={<Link href="/exames" className="text-xs font-extrabold text-muted hover:text-ink">Ver tudo →</Link>}
+            />
+            {examStats.length === 0 ? (
+              <p className="text-xs leading-relaxed text-muted">Os simulados existem para as línguas naturais. No teu pacote praticas com exercícios e projetos guiados.</p>
+            ) : (
+              <div className="space-y-3">
+                {examStats.map((stats) => (
+                  <div key={stats.examId} className="rounded-2xl border border-line p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="flex items-center gap-2 text-sm font-extrabold"><GraduationCap size={15} className="text-sun-deep" /> Simulado {stats.level}</p>
+                      {stats.attempts > 0 ? (
+                        <Tag tone={stats.passed ? 'green' : 'sun'}>{stats.passed ? 'Aprovado' : `${stats.bestPercent}%`}</Tag>
+                      ) : (
+                        <Tag tone="sun">Por fazer</Tag>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-muted">
+                      {stats.attempts > 0 ? (
+                        <>Melhor: <strong className="text-ink">{stats.bestCorrect}/{stats.total}</strong> · {stats.attempts} {stats.attempts === 1 ? 'tentativa' : 'tentativas'} · {stats.xp} XP ganhos</>
+                      ) : (
+                        `${stats.total} questões · com cronómetro · resultado indicativo`
+                      )}
+                    </p>
+                    {stats.attempts > 0 && <div className="mt-2"><ProgressBar value={stats.bestCorrect} max={stats.total} color={stats.passed ? 'bg-success' : 'bg-sun'} /></div>}
+                    <Link href="/exames" className="btn-ghost mt-3 w-full !py-2 text-xs">
+                      {stats.attempts > 0 ? 'Repetir simulado' : 'Fazer simulado'} <ArrowRight size={13} />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </div>

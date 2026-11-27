@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXAMS, examFor, examsFor, parseExamScore, scoreExam } from '../lib/exams';
+import { EXAMS, examAttemptStats, examFor, examsFor, parseExamScore, scoreExam } from '../lib/exams';
 import type { LanguageId } from '../lib/types';
 
 const naturalPacks: LanguageId[] = ['en', 'es', 'nl', 'fr', 'de', 'it'];
@@ -138,5 +138,35 @@ describe('simulados de proficiência', () => {
     expect(parseExamScore('7')).toBeNull();
     expect(parseExamScore(undefined)).toBeNull();
     expect(parseExamScore('')).toBeNull();
+  });
+it('examAttemptStats: tentativas, melhor resultado, XP, patamar e última data', () => {
+    const exam = EXAMS[0];
+    const attempts = [
+      { exerciseId: `${exam.id}-complete`, userAnswer: '7/10', xpAwarded: 17, timestamp: '2026-11-20T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-complete`, userAnswer: '9/10', xpAwarded: 19, timestamp: '2026-11-22T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-complete`, userAnswer: 'formato estranho', xpAwarded: 0, timestamp: '2026-11-23T10:00:00.000Z' },
+      { exerciseId: `${exam.id}-q1`, userAnswer: 'qualquer coisa', xpAwarded: 0, timestamp: '2026-11-23T11:00:00.000Z' },
+    ];
+    const stats = examAttemptStats(exam, attempts);
+    expect(stats.attempts).toBe(3);
+    expect(stats.bestCorrect).toBe(9);
+    expect(stats.bestPercent).toBe(90);
+    expect(stats.passed).toBe(true);
+    expect(stats.xp).toBe(36);
+    expect(stats.lastAttemptAt).toBe('2026-11-23T10:00:00.000Z');
+
+    const empty = examAttemptStats(exam, []);
+    expect(empty.attempts).toBe(0);
+    expect(empty.bestCorrect).toBe(0);
+    expect(empty.bestPercent).toBe(0);
+    expect(empty.passed).toBe(false);
+    expect(empty.xp).toBe(0);
+    expect(empty.lastAttemptAt).toBeUndefined();
+
+    const failing = examAttemptStats(exam, [
+      { exerciseId: `${exam.id}-complete`, userAnswer: '5/10', xpAwarded: 5, timestamp: '2026-11-25T10:00:00.000Z' },
+    ]);
+    expect(failing.passed).toBe(false);
+    expect(failing.bestPercent).toBe(50);
   });
 });

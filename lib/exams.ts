@@ -1,4 +1,4 @@
-import type { LanguageId } from './types';
+import type { Attempt, LanguageId } from './types';
 
 /**
  * Simulados inspirados no formato de exames de proficiência (leitura, audição
@@ -531,4 +531,55 @@ export function parseExamScore(userAnswer: string | undefined): { correct: numbe
   const match = userAnswer.match(/^(\d+)\/(\d+)$/);
   if (!match) return null;
   return { correct: Number(match[1]), total: Number(match[2]) };
+}
+
+/** Estatísticas reais de um simulado a partir das tentativas guardadas. */
+export interface ExamAttemptStats {
+  examId: string;
+  title: string;
+  level: SampleExam['level'];
+  /** Número de tentativas completas registadas. */
+  attempts: number;
+  /** Melhor resultado em respostas certas (0 se ainda sem tentativas). */
+  bestCorrect: number;
+  total: number;
+  bestPercent: number;
+  /** O melhor resultado atinge o patamar de aprovação? */
+  passed: boolean;
+  /** XP acumulado nas tentativas completas deste simulado. */
+  xp: number;
+  lastAttemptAt?: string;
+}
+
+export function examAttemptStats(
+  exam: SampleExam,
+  attempts: ReadonlyArray<Pick<Attempt, 'exerciseId' | 'userAnswer' | 'xpAwarded' | 'timestamp'>>,
+): ExamAttemptStats {
+  let count = 0;
+  let best = -1;
+  let xp = 0;
+  let last: string | undefined;
+  for (const attempt of attempts) {
+    if (attempt.exerciseId !== `${exam.id}-complete`) continue;
+    count += 1;
+    xp += attempt.xpAwarded;
+    const parsed = parseExamScore(attempt.userAnswer);
+    if (parsed) best = Math.max(best, parsed.correct);
+    if (!last || attempt.timestamp > last) last = attempt.timestamp;
+  }
+  const bestCorrect = best === -1 ? 0 : best;
+  const total = exam.questions.length;
+  const bestPercent = total > 0 ? Math.round((bestCorrect / total) * 100) : 0;
+  return {
+    examId: exam.id,
+    title: exam.title,
+    level: exam.level,
+    attempts: count,
+    bestCorrect,
+    total,
+    bestPercent,
+    passed: count > 0 && bestPercent >= exam.passPercent,
+    xp,
+    lastAttemptAt: last,
+  };
 }
