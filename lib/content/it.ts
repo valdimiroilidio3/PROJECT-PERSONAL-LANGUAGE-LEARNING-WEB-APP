@@ -67,4 +67,39 @@ export const itLessons = [
     ],
     'it',
   ),
+
+  createLesson(
+    {
+      id: 'it-ristorante',
+      title: 'Al ristorante',
+      subtitle: 'Pede uma comida num restaurante em italiano',
+      objective: 'Pedir uma mesa, encomendar um prato e pedir a conta.',
+      level: 'A1',
+      category: 'Comida',
+      minutes: 6,
+      xp: 20,
+      vocabulary: [
+        v('il menù', 'o menu', 'Ecco il menù.', 'Lista de pratos.'),
+        v('un tavolo', 'uma mesa', 'Un tavolo per due, per favore.', 'Pedido de mesa.'),
+        v('l’ordinazione', 'o pedido', 'Vorrei fare un’ordinazione.', 'Encomenda.'),
+        v('il conto', 'a conta', 'Il conto, per favore.', 'Pedido da conta.'),
+        v('il piatto del giorno', 'o prato do dia', 'Qual è il piatto del giorno?', 'Prato do dia.'),
+        v('per favore', 'por favor', 'Un caffè, per favore.', 'Forma educada.'),
+      ],
+    },
+    [
+      mc('O que significa “il conto”?', ['o menu', 'a conta', 'o prato'], 1, '“Il conto” é a conta do restaurante.'),
+      fill('Un tavolo per ____, per favore.', ['due'], '“Due” significa dois.', 'Uma mesa para dois, por favor.'),
+      word(['ordinare', 'vorrei'], 'Vorrei ordinare', '“Vorrei” é o condicional de “volere” (queria).'),
+      match([
+        { term: 'il menù', translation: 'o menu' },
+        { term: 'un tavolo', translation: 'uma mesa' },
+        { term: 'il conto', translation: 'a conta' },
+      ], 'Associa o termo italiano ao significado.'),
+      dialogue(['Buonasera, un tavolo per favore?', '____', 'Perfetto, seguitemi.'], ['Un tavolo per due, per favore.', 'Il conto, per favore.', 'Vorrei il menù.'], 0, 'Ao entrar, pede-se a mesa.'),
+      read('Giulia: Buonasera. Ecco il menù. Oggi abbiamo pesce e insalata. Cliente: Prendo il pesce, per favore.', 'O que o cliente escolheu?', ['O peixe', 'A salada', 'O café'], 0, 'O cliente diz “Prendo il pesce”.'),
+      translate('Traduz: “A conta, por favor.”', ['Il conto, per favore'], 'Forma educada de pedir a conta.'),
+    ],
+    'it',
+  ),
 ];

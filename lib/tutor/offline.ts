@@ -115,6 +115,41 @@ const extraScripts: Record<string, { lines: string[]; translations: string[]; fo
     translations: ['Vamos ver esse código.', 'Que tipo de erro aparece?', 'Boa! Como podes converter o valor?', 'Perfeito. Testa com print().'],
     followUps: ['Aparece um TypeError.', 'Não se pode somar int com str.', 'print(str(5) + "3")', 'print("53")'],
   },
+  'es-cafe': {
+    lines: ['¡Hola! Bienvenida. ¿Qué te pongo?', 'Perfecto. ¿Quieres algo de comer?', '¿Algo más?', 'Aquí tiene. ¡Que aproveche!'],
+    translations: ['Olá! Bem-vinda. O que te sirvo?', 'Perfeito. Queres algo de comer?', 'Mais alguma coisa?', 'Aqui tem. Bom apetite!'],
+    followUps: ['Un café, por favor.', 'Quiero una tostada.', 'Nada más, gracias.', '¿Cuánto es?'],
+  },
+  'nl-winkel': {
+    lines: ['Hallo! Waarmee kan ik je helpen?', 'Welke maat zoek je?', 'Welke kleur wil je?', 'Kom mee naar de kassa!'],
+    translations: ['Olá! Em que posso ajudar-te?', 'Que tamanho procuras?', 'Que cor queres?', 'Vem comigo à caixa!'],
+    followUps: ['Ik zoek maat M.', 'Medium.', 'Ik wil blauw.', 'Wat kost het?'],
+  },
+  'fr-restaurant': {
+    lines: ['Bonsoir ! Bienvenue. Une table ?', 'Voici le menu. Je peux vous conseiller ?', 'Excellent choix. Et comme boisson ?', 'Voici. Bon appétit !'],
+    translations: ['Boa noite! Bem-vindo. Uma mesa?', 'Aqui está o menu. Posso aconselhar?', 'Excelente escolha. E para beber?', 'Aqui tem. Bom apetite!'],
+    followUps: ['Une table pour deux, s’il vous plaît.', 'Je prends le poisson.', 'Un verre d’eau.', 'L’addition, s’il vous plaît.'],
+  },
+  'de-bahnhof': {
+    lines: ['Guten Tag! Wohin fahren Sie?', 'Einfach oder hin und zurück?', 'Ein Moment… hier ist Ihr Ticket.', 'Gute Fahrt!'],
+    translations: ['Bom dia! Para onde vai?', 'Ida ou ida e volta?', 'Um momento… aqui está o seu bilhete.', 'Boa viagem!'],
+    followUps: ['Ich fahre nach Lissabon.', 'Einfach, bitte.', 'Was kostet das?', 'Danke schön!'],
+  },
+  'it-mercato': {
+    lines: ['Buongiorno! Cosa desidera?', 'Questi pomodori sono freschi.', 'Sono due euro al chilo.', 'Arrivederci!'],
+    translations: ['Bom dia! O que deseja?', 'Estes tomates são frescos.', 'São dois euros por quilo.', 'Até logo!'],
+    followUps: ['Vorrei due pomodori.', 'Allora un chilo, per favore.', 'Quanto costa?', 'Grazie, arrivederci.'],
+  },
+  'js-arrays': {
+    lines: ['Vamos olhar esses arrays.', 'O que o map devolve?', 'Certo. E quando é que o filter deixa passar um elemento?', 'Excelente. Escreve o filtro dos pares.'],
+    translations: ['Vamos olhar esses arrays.', 'O que o map devolve?', 'Certo. E quando é que o filter deixa passar um elemento?', 'Excelente. Escreve o filtro dos pares.'],
+    followUps: ['Devolve [2, 4, 6].', 'map devolve um novo array.', 'Só entram os que passam no teste.', 'nums.filter(n => n % 2 === 0)'],
+  },
+  'py-ciclos': {
+    lines: ['Vamos ver esse ciclo.', 'Quantas vezes o corpo corre?', 'Exato. E o que faz o range?', 'Ótimo. Escreve um for que soma 1 até 10.'],
+    translations: ['Vamos ver esse ciclo.', 'Quantas vezes o corpo corre?', 'Exato. E o que faz o range?', 'Ótimo. Escreve um for que soma 1 até 10.'],
+    followUps: ['Corre uma vez por elemento.', 'range(3) dá 0, 1, 2.', 'O for repete para cada item.', 'soma = 0\nfor i in range(1, 11):\n    soma += i'],
+  },
 };
 
 const openersByLanguage: Record<LanguageId, Record<Personality, string>> = {

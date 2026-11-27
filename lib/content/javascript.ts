@@ -66,4 +66,37 @@ export const javascriptLessons = [
     ],
     'javascript',
   ),
+
+  createLesson(
+    {
+      id: 'js-arrays',
+      title: 'Arrays e métodos',
+      subtitle: 'Trabalha com listas em JavaScript',
+      objective: 'Usar length, map, filter e push num array.',
+      level: 'L2',
+      category: 'Arrays',
+      minutes: 8,
+      xp: 25,
+      vocabulary: [
+        v('array', 'lista ordenada', 'const nomes = ["Ana", "Luis"];', 'Coleção de valores.'),
+        v('length', 'tamanho', 'nomes.length', 'Número de elementos.'),
+        v('map', 'transformar', 'nomes.map(n => n.toUpperCase())', 'Devolve um novo array transformado.'),
+        v('filter', 'escolher', 'nomes.filter(n => n.startsWith("A"))', 'Devolve só os que passam no teste.'),
+        v('push', 'acrescentar', 'nomes.push("Mia");', 'Adiciona no fim do array.'),
+      ],
+    },
+    [
+      mc('O que devolve “nomes.length”?', ['O primeiro elemento', 'O tamanho do array', 'O array invertido'], 1, '“length” é a quantidade de elementos.'),
+      fill('O método que transforma cada item é ____.', ['map'], '“map” devolve um novo array transformado.', 'O método é “map”.'),
+      word(['Ana', 'const', 'nomes'], 'const nomes = ["Ana"]', 'A declaração começa com a palavra “const”.'),
+      match([
+        { term: 'map', translation: 'devolve novo array transformado' },
+        { term: 'filter', translation: 'devolve só os que passam no teste' },
+        { term: 'push', translation: 'acrescenta no fim' },
+      ], 'Associa cada método ao que faz.'),
+      read('const nums = [1, 2, 3, 4];\nconst pares = nums.filter(n => n % 2 === 0);\nconsole.log(pares);', 'O que aparece na consola?', ['[1, 3]', '[2, 4]', '[1, 2, 3, 4]'], 1, 'O filtro mantém os pares: 2 e 4.'),
+      sentence('Escreve um map que devolve cada nome em maiúsculas.', 'Usa nomes.map(...)', ['nomes.map(n => n.toUpperCase())', 'nomes.map(function(n) { return n.toUpperCase(); })'], '“map” transforma cada elemento e devolve um novo array.'),
+    ],
+    'javascript',
+  ),
 ];

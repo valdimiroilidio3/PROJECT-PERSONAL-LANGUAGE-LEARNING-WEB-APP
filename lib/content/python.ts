@@ -66,4 +66,37 @@ export const pythonLessons = [
     ],
     'python',
   ),
+
+  createLesson(
+    {
+      id: 'py-ciclos',
+      title: 'Ciclos for',
+      subtitle: 'Repete código para cada item em Python',
+      objective: 'Usar for, range e len para percorrer listas.',
+      level: 'L2',
+      category: 'Ciclos',
+      minutes: 8,
+      xp: 25,
+      vocabulary: [
+        v('for', 'ciclo', 'for n in nums:', 'Repete para cada item.'),
+        v('range', 'sequência de números', 'for i in range(3):', 'Gera 0, 1, 2.'),
+        v('in', 'dentro de', 'for n in nums:', 'Itera pela coleção.'),
+        v('len', 'tamanho', 'len(nums)', 'Número de elementos.'),
+        v('append', 'acrescentar', 'nums.append(4)', 'Adiciona no fim da lista.'),
+      ],
+    },
+    [
+      mc('O que gera “range(3)”?', ['1, 2, 3', '0, 1, 2', '0, 1, 2, 3'], 1, '“range(3)” produz 0, 1 e 2.'),
+      fill('Para percorrer uma lista usamos o ciclo ____.', ['for'], '“for” repete para cada elemento.', 'Usamos “for”.'),
+      word(['nums', 'for', 'n', 'in'], 'for n in nums', 'A forma básica: “for x in lista:”'),
+      match([
+        { term: 'for', translation: 'ciclo de repetição' },
+        { term: 'range', translation: 'sequência de números' },
+        { term: 'append', translation: 'acrescenta no fim' },
+      ], 'Associa cada conceito ao seu significado.'),
+      read('total = 0\nfor n in [1, 2, 3]:\n    total = total + n\nprint(total)', 'O que aparece no ecrã?', ['3', '6', '123'], 1, 'O ciclo soma 1 + 2 + 3 = 6.'),
+      sentence('Escreve um ciclo que percorre nums e imprime cada número.', 'Usa for e print', ['for n in nums:\n    print(n)', 'for n in nums: print(n)'], 'A estrutura é “for x in lista:” com o corpo indentado.'),
+    ],
+    'python',
+  ),
 ];

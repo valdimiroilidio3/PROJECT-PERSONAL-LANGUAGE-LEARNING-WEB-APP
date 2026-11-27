@@ -67,4 +67,39 @@ export const deLessons = [
     ],
     'de',
   ),
+
+  createLesson(
+    {
+      id: 'de-einkauf',
+      title: 'Einkaufen im Supermarkt',
+      subtitle: 'Faz compras num supermercado em alemão',
+      objective: 'Perguntar o preço, pagar na caixa e pedir um saco.',
+      level: 'A1',
+      category: 'Compras',
+      minutes: 6,
+      xp: 20,
+      vocabulary: [
+        v('der Supermarkt', 'o supermercado', 'Ich gehe zum Supermarkt.', 'Sítio de compras.'),
+        v('die Kasse', 'a caixa', 'Ich zahle an der Kasse.', 'Onde se paga.'),
+        v('der Preis', 'o preço', 'Was ist der Preis?', 'Valor.'),
+        v('teuer', 'caro', 'Das ist teuer.', 'Preço alto.'),
+        v('billig', 'barato', 'Das ist billig.', 'Preço baixo.'),
+        v('die Tasche', 'o saco', 'Brauchen Sie eine Tasche?', 'Saco de compras.'),
+      ],
+    },
+    [
+      mc('O que significa “die Kasse”?', ['a caixa', 'o saco', 'a fila'], 0, '“Die Kasse” é a caixa onde se paga.'),
+      fill('Was ist der ____?', ['Preis'], 'Preço em alemão é “der Preis”.', 'Qual é o preço?'),
+      word(['gehe', 'ich', 'Supermarkt', 'zum'], 'Ich gehe zum Supermarkt', 'Sujeito antes do verbo; “zum” = zu dem.'),
+      match([
+        { term: 'der Supermarkt', translation: 'o supermercado' },
+        { term: 'der Preis', translation: 'o preço' },
+        { term: 'die Tasche', translation: 'o saco' },
+      ], 'Associa o termo alemão ao significado.'),
+      translate('Traduz: “Isto é caro.”', ['Das ist teuer'], '“Das ist teuer” é a forma direta.'),
+      listen('Brauchen Sie eine Tasche?', 'O que a assistente perguntou?', ['Se quer experimentar', 'Se precisa de um saco', 'Se gosta do produto'], 1, '“Brauchen Sie eine Tasche?” = “Precisa de um saco?”'),
+      read('Hallo, ich bin Jonas. Im Supermarkt zahle ich an der Kasse. Die Tasche kostet einen Euro.', 'Onde o Jonas paga?', ['Na caixa', 'No balcão', 'Online'], 0, 'O texto diz “zahle ich an der Kasse”.'),
+    ],
+    'de',
+  ),
 ];
