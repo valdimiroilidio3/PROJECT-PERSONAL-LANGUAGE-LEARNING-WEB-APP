@@ -5,6 +5,8 @@ import type { LanguageId } from './types';
  * e vocabulário). Todas as perguntas são originais e baseadas no conteúdo do
  * percurso. Não são um exame oficial, não emitem certificado e não substituem
  * uma avaliação certificada — o resultado é indicativo.
+ *
+ * Cobertura: A1 para as seis línguas naturais; A2 para inglês e espanhol.
  */
 export type ExamSection = 'reading' | 'listening' | 'vocabulary';
 
@@ -375,10 +377,152 @@ export const EXAMS: SampleExam[] = [
       },
     ],
   },
+  /* ------------------------------ English A2 ------------------------------ */
+  {
+    id: 'en-a2',
+    languageId: 'en',
+    level: 'A2',
+    title: 'Simulado A2 · Inglês',
+    description: 'Leitura, audição e vocabulário — o essencial do nível A2 (passado, planos, saúde, opinião).',
+    durationMinutes: 15,
+    passPercent: 60,
+    questions: [
+      {
+        id: 'en-a2-r1', section: 'reading', passage: 'Hi Sam,\nIt’s Maria. Thanks for your message about Saturday. I’m working in the morning, but I finish at one.\nIn the afternoon we can meet at the new Italian restaurant near the station — let’s say two o’clock. We should book a table because it’s usually busy.\nIf you can’t come, call me before ten. See you!',
+        question: 'What does Maria do on Saturday morning?', options: ['She works', 'She studies', 'She travels to London'], correctIndex: 0, explanation: '“I’m working in the morning, but I finish at one.”',
+      },
+      {
+        id: 'en-a2-r2', section: 'reading', passage: 'Hi Sam,\nIt’s Maria. Thanks for your message about Saturday. I’m working in the morning, but I finish at one.\nIn the afternoon we can meet at the new Italian restaurant near the station — let’s say two o’clock. We should book a table because it’s usually busy.\nIf you can’t come, call me before ten. See you!',
+        question: 'What time can they meet?', options: ['At one o’clock', 'At two o’clock', 'At ten o’clock'], correctIndex: 1, explanation: '“Let’s say two o’clock.”',
+      },
+      {
+        id: 'en-a2-r3', section: 'reading', passage: 'Hi Sam,\nIt’s Maria. Thanks for your message about Saturday. I’m working in the morning, but I finish at one.\nIn the afternoon we can meet at the new Italian restaurant near the station — let’s say two o’clock. We should book a table because it’s usually busy.\nIf you can’t come, call me before ten. See you!',
+        question: 'Where does Maria suggest meeting?', options: ['At her office', 'At the station', 'At the Italian restaurant near the station'], correctIndex: 2, explanation: '“We can meet at the new Italian restaurant near the station.”',
+      },
+      {
+        id: 'en-a2-r4', section: 'reading', passage: 'Hi Sam,\nIt’s Maria. Thanks for your message about Saturday. I’m working in the morning, but I finish at one.\nIn the afternoon we can meet at the new Italian restaurant near the station — let’s say two o’clock. We should book a table because it’s usually busy.\nIf you can’t come, call me before ten. See you!',
+        question: 'Why does Maria suggest booking a table?', options: ['Because the restaurant is usually busy', 'Because it is expensive', 'Because it closes early'], correctIndex: 0, explanation: '“We should book a table because it’s usually busy.”',
+      },
+      {
+        id: 'en-a2-r5', section: 'reading', passage: 'Hi Sam,\nIt’s Maria. Thanks for your message about Saturday. I’m working in the morning, but I finish at one.\nIn the afternoon we can meet at the new Italian restaurant near the station — let’s say two o’clock. We should book a table because it’s usually busy.\nIf you can’t come, call me before ten. See you!',
+        question: 'What should Sam do if he can’t come?', options: ['Send an email on Sunday', 'Call Maria before ten', 'Book a table for three'], correctIndex: 1, explanation: '“If you can’t come, call me before ten.”',
+      },
+      {
+        id: 'en-a2-r6', section: 'reading', passage: 'Hi Sam,\nIt’s Maria. Thanks for your message about Saturday. I’m working in the morning, but I finish at one.\nIn the afternoon we can meet at the new Italian restaurant near the station — let’s say two o’clock. We should book a table because it’s usually busy.\nIf you can’t come, call me before ten. See you!',
+        question: 'Who writes the message?', options: ['Sam', 'Maria’s mother', 'Maria'], correctIndex: 2, explanation: 'A mensagem começa com “It’s Maria.”',
+      },
+      {
+        id: 'en-a2-a1', section: 'listening', audioText: 'Excuse me, could you tell me where the nearest pharmacy is? It’s on the corner of King Street, next to the bank.',
+        question: 'Where is the pharmacy?', options: ['Next to the bank, on King Street', 'Behind the station', 'Inside the library'], correctIndex: 0, explanation: '“On the corner of King Street, next to the bank.”',
+      },
+      {
+        id: 'en-a2-a2', section: 'listening', audioText: 'The library will be closed next Monday because of a holiday. It opens again on Tuesday at nine.',
+        question: 'When does the library reopen?', options: ['On Monday at nine', 'On Tuesday at nine', 'On Sunday at ten'], correctIndex: 1, explanation: '“It opens again on Tuesday at nine.”',
+      },
+      {
+        id: 'en-a2-a3', section: 'listening', audioText: 'I usually go jogging in the park before breakfast, but today it’s raining, so I’ll stay home.',
+        question: 'Why will the speaker stay home today?', options: ['Because she is tired', 'Because the park is closed', 'Because it is raining'], correctIndex: 2, explanation: '“Today it’s raining, so I’ll stay home.”',
+      },
+      {
+        id: 'en-a2-a4', section: 'listening', audioText: 'Our neighbourhood gym has a swimming pool. Membership is twenty-five euros a month and includes all classes.',
+        question: 'How much is the membership?', options: ['Fifteen euros a month', 'Twenty-five euros a month', 'Fifty euros a month'], correctIndex: 1, explanation: '“Membership is twenty-five euros a month.”',
+      },
+      {
+        id: 'en-a2-a5', section: 'listening', audioText: 'Could you turn the music down, please? I’m trying to study for my exam and I can’t concentrate.',
+        question: 'What does the speaker want?', options: ['The music to be turned down', 'To borrow some notes', 'To study together'], correctIndex: 0, explanation: '“Could you turn the music down, please?”',
+      },
+      {
+        id: 'en-a2-v1', section: 'vocabulary', question: 'Which word means “marcação”?', options: ['deadline', 'budget', 'appointment'], correctIndex: 2, explanation: '“Appointment” = marcação / compromisso marcado.',
+      },
+      {
+        id: 'en-a2-v2', section: 'vocabulary', question: 'Choose the correct question: “_____ did you finish work yesterday?”', options: ['Why', 'When', 'Who'], correctIndex: 1, explanation: 'Pergunta sobre tempo: “When did you finish work?”',
+      },
+      {
+        id: 'en-a2-v3', section: 'vocabulary', question: 'Which word is the opposite of “expensive”?', options: ['cheap', 'big', 'slow'], correctIndex: 0, explanation: '“Cheap” = barato — oposto de caro.',
+      },
+      {
+        id: 'en-a2-v4', section: 'vocabulary', question: 'Where can you exercise and use a swimming pool?', options: ['At the bakery', 'At the library', 'At the gym'], correctIndex: 2, explanation: 'Ginásio (gym) com piscina (swimming pool).',
+      },
+    ],
+  },
+  /* ------------------------------ Spanish A2 ------------------------------ */
+  {
+    id: 'es-a2',
+    languageId: 'es',
+    level: 'A2',
+    title: 'Simulado A2 · Español',
+    description: 'Comprensión lectora, auditiva y vocabulario — nivel A2 (pasado, planes, salud, opinión).',
+    durationMinutes: 15,
+    passPercent: 60,
+    questions: [
+      {
+        id: 'es-a2-r1', section: 'reading', passage: 'Hola, Marta:\nGracias por tu mensaje sobre el sábado. Por la mañana trabajo, pero termino a la una.\nPor la tarde podemos vernos en el restaurante italiano que hay cerca de la estación — digamos a las dos. Deberíamos reservar mesa porque suele estar lleno.\nSi no puedes venir, llámame antes de las diez. ¡Hasta pronto!',
+        question: '¿Qué hace la persona que escribe por la mañana?', options: ['Trabaja', 'Estudia', 'Viaja a Madrid'], correctIndex: 0, explanation: '“Por la mañana trabajo, pero termino a la una.”',
+      },
+      {
+        id: 'es-a2-r2', section: 'reading', passage: 'Hola, Marta:\nGracias por tu mensaje sobre el sábado. Por la mañana trabajo, pero termino a la una.\nPor la tarde podemos vernos en el restaurante italiano que hay cerca de la estación — digamos a las dos. Deberíamos reservar mesa porque suele estar lleno.\nSi no puedes venir, llámame antes de las diez. ¡Hasta pronto!',
+        question: '¿A qué hora pueden verse?', options: ['A la una', 'A las dos', 'A las diez'], correctIndex: 1, explanation: '“Digamos a las dos.”',
+      },
+      {
+        id: 'es-a2-r3', section: 'reading', passage: 'Hola, Marta:\nGracias por tu mensaje sobre el sábado. Por la mañana trabajo, pero termino a la una.\nPor la tarde podemos vernos en el restaurante italiano que hay cerca de la estación — digamos a las dos. Deberíamos reservar mesa porque suele estar lleno.\nSi no puedes venir, llámame antes de las diez. ¡Hasta pronto!',
+        question: '¿Dónde sugiere verse?', options: ['En su oficina', 'En la estación', 'En el restaurante italiano cerca de la estación'], correctIndex: 2, explanation: '“Podemos vernos en el restaurante italiano que hay cerca de la estación.”',
+      },
+      {
+        id: 'es-a2-r4', section: 'reading', passage: 'Hola, Marta:\nGracias por tu mensaje sobre el sábado. Por la mañana trabajo, pero termino a la una.\nPor la tarde podemos vernos en el restaurante italiano que hay cerca de la estación — digamos a las dos. Deberíamos reservar mesa porque suele estar lleno.\nSi no puedes venir, llámame antes de las diez. ¡Hasta pronto!',
+        question: '¿Por qué sugiere reservar mesa?', options: ['Porque suele estar lleno', 'Porque es caro', 'Porque cierra pronto'], correctIndex: 0, explanation: '“Deberíamos reservar mesa porque suele estar lleno.”',
+      },
+      {
+        id: 'es-a2-r5', section: 'reading', passage: 'Hola, Marta:\nGracias por tu mensaje sobre el sábado. Por la mañana trabajo, pero termino a la una.\nPor la tarde podemos vernos en el restaurante italiano que hay cerca de la estación — digamos a las dos. Deberíamos reservar mesa porque suele estar lleno.\nSi no puedes venir, llámame antes de las diez. ¡Hasta pronto!',
+        question: '¿Qué debe hacer Marta si no puede venir?', options: ['Enviar un email el domingo', 'Llamar antes de las diez', 'Reservar mesa para tres'], correctIndex: 1, explanation: '“Si no puedes venir, llámame antes de las diez.”',
+      },
+      {
+        id: 'es-a2-r6', section: 'reading', passage: 'Hola, Marta:\nGracias por tu mensaje sobre el sábado. Por la mañana trabajo, pero termino a la una.\nPor la tarde podemos vernos en el restaurante italiano que hay cerca de la estación — digamos a las dos. Deberíamos reservar mesa porque suele estar lleno.\nSi no puedes venir, llámame antes de las diez. ¡Hasta pronto!',
+        question: '¿Quién escribe el mensaje?', options: ['Marta', 'La madre de Marta', 'Una amiga que trabaja por la mañana'], correctIndex: 2, explanation: 'Quem escreve trabalha de manhã e termina à uma — não é a Marta, que recebe a mensagem.',
+      },
+      {
+        id: 'es-a2-a1', section: 'listening', audioText: 'Perdone, ¿dónde está la farmacia más cercana? Está en la esquina de la calle Mayor, al lado del banco.',
+        question: '¿Dónde está la farmacia?', options: ['En la esquina de la calle Mayor, al lado del banco', 'Detrás de la estación', 'Dentro de la biblioteca'], correctIndex: 0, explanation: '“Está en la esquina de la calle Mayor, al lado del banco.”',
+      },
+      {
+        id: 'es-a2-a2', section: 'listening', audioText: 'La biblioteca estará cerrada el lunes que viene por fiesta. Vuelve a abrir el martes a las nueve.',
+        question: '¿Cuándo vuelve a abrir la biblioteca?', options: ['El lunes a las nueve', 'El martes a las nueve', 'El domingo a las diez'], correctIndex: 1, explanation: '“Vuelve a abrir el martes a las nueve.”',
+      },
+      {
+        id: 'es-a2-a3', section: 'listening', audioText: 'Normalmente corro por el parque antes de desayunar, pero hoy llueve y me quedo en casa.',
+        question: '¿Por qué se queda en casa hoy?', options: ['Porque está cansada', 'Porque el parque está cerrado', 'Porque llueve'], correctIndex: 2, explanation: '“Hoy llueve y me quedo en casa.”',
+      },
+      {
+        id: 'es-a2-a4', section: 'listening', audioText: 'Nuestro gimnasio del barrio tiene piscina. La cuota es de veinticinco euros al mes e incluye todas las clases.',
+        question: '¿Cuánto cuesta la cuota?', options: ['Quince euros al mes', 'Veinticinco euros al mes', 'Cincuenta euros al mes'], correctIndex: 1, explanation: '“La cuota es de veinticinco euros al mes.”',
+      },
+      {
+        id: 'es-a2-a5', section: 'listening', audioText: '¿Puedes bajar la música, por favor? Estoy estudiando para el examen y no me puedo concentrar.',
+        question: '¿Qué quiere la persona?', options: ['Que bajen la música', 'Pedir prestados unos apuntes', 'Estudiar juntos'], correctIndex: 0, explanation: '“¿Puedes bajar la música, por favor?”',
+      },
+      {
+        id: 'es-a2-v1', section: 'vocabulary', question: '¿Qué palabra significa “marcação / cita”?', options: ['plazo', 'presupuesto', 'cita'], correctIndex: 2, explanation: '“Cita” = marcação / compromisso (cita médica = consulta marcada).',
+      },
+      {
+        id: 'es-a2-v2', section: 'vocabulary', question: 'Elige la pregunta correcta: “¿_____ terminaste el trabajo ayer?”', options: ['Por qué', 'Cuándo', 'Quién'], correctIndex: 1, explanation: 'Pergunta sobre tempo: “¿Cuándo terminaste el trabajo?”',
+      },
+      {
+        id: 'es-a2-v3', section: 'vocabulary', question: '¿Cuál es el contrario de “caro”?', options: ['barato', 'grande', 'lento'], correctIndex: 0, explanation: '“Barato” = barato — oposto de caro.',
+      },
+      {
+        id: 'es-a2-v4', section: 'vocabulary', question: '¿Dónde puedes hacer ejercicio y nadar?', options: ['En la panadería', 'En la librería', 'En el gimnasio'], correctIndex: 2, explanation: 'Ginásio (gimnasio) com piscina (piscina).',
+      },
+    ],
+  },
 ];
 
-export function examFor(languageId: LanguageId): SampleExam | undefined {
-  return EXAMS.find((exam) => exam.languageId === languageId);
+/** Todos os simulados disponíveis para a língua (A1 primeiro; A2 quando existe). */
+export function examsFor(languageId: LanguageId): SampleExam[] {
+  return EXAMS.filter((exam) => exam.languageId === languageId);
+}
+
+/** Simulado de um nível específico; por omissão devolve o A1 (compatibilidade). */
+export function examFor(languageId: LanguageId, level: SampleExam['level'] = 'A1'): SampleExam | undefined {
+  return EXAMS.find((exam) => exam.languageId === languageId && exam.level === level);
 }
 
 /** Lê um "N/M" guardado nas tentativas do simulado — devolve null se não for esse formato. */
