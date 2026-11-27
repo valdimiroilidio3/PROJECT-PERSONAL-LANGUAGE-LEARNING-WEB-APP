@@ -12,7 +12,7 @@ describe('catálogo de conteúdo por pacote', () => {
     for (const id of packs) {
       expect(lessonsFor(id).length, `pacote ${id}`).toBeGreaterThanOrEqual(3);
     }
-    expect(lessonsFor('en').length).toBe(16);
+    expect(lessonsFor('en').length).toBe(17);
   });
 
   it('cada pacote tem pelo menos 2 cenários de prática', () => {
@@ -22,7 +22,7 @@ describe('catálogo de conteúdo por pacote', () => {
   });
 
   it('os novos cenários têm palavras-chave e modelos com o mesmo comprimento dos prompts', () => {
-    const newScenarioIds = ['es-cafe', 'nl-winkel', 'fr-restaurant', 'de-bahnhof', 'it-mercato', 'js-arrays', 'py-ciclos'];
+    const newScenarioIds = ['es-cafe', 'nl-winkel', 'fr-restaurant', 'de-bahnhof', 'it-mercato', 'js-arrays', 'py-ciclos', 'en-networking', 'es-entrevista', 'nl-sollicitatie', 'fr-entretien', 'de-vorstellungsgespraech', 'it-colloquio'];
     for (const id of newScenarioIds) {
       const all = packs.flatMap((pack) => scenariosFor(pack));
       const scenario = all.find((item) => item.id === id);
@@ -36,7 +36,7 @@ describe('catálogo de conteúdo por pacote', () => {
   });
 
   it('cada cenário novo tem personagem e abertura do tutor em personagem', () => {
-    const newScenarioIds = ['es-cafe', 'nl-winkel', 'fr-restaurant', 'de-bahnhof', 'it-mercato', 'js-arrays', 'py-ciclos'];
+    const newScenarioIds = ['es-cafe', 'nl-winkel', 'fr-restaurant', 'de-bahnhof', 'it-mercato', 'js-arrays', 'py-ciclos', 'en-networking', 'es-entrevista', 'nl-sollicitatie', 'fr-entretien', 'de-vorstellungsgespraech', 'it-colloquio'];
     for (const id of newScenarioIds) {
       const character = characterFor(id);
       expect(character.name.length).toBeGreaterThan(0);
@@ -57,6 +57,14 @@ describe('catálogo de conteúdo por pacote', () => {
       'it-ristorante': 'it',
       'js-arrays': 'javascript',
       'py-ciclos': 'python',
+      'en-formal-email': 'en',
+      'es-exam-avisos': 'es',
+      'nl-exam-omroepen': 'nl',
+      'fr-exam-annonces': 'fr',
+      'de-exam-durchsagen': 'de',
+      'it-exam-annunci': 'it',
+      'js-exam-previsao': 'javascript',
+      'py-exam-previsao': 'python',
     };
     for (const [lessonId, languageId] of Object.entries(expected)) {
       expect(getLesson(lessonId, languageId as LanguageId)?.languageId, lessonId).toBe(languageId);

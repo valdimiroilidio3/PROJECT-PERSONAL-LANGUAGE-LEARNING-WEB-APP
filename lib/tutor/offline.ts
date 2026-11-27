@@ -76,8 +76,13 @@ const scripts: Record<string, { lines: string[]; translations: string[]; followU
     translations: ['Olá! Como estás?', 'Queres encontrar-te este fim de semana?', 'Que tal sábado de manhã no café?', 'Perfeito. Vejo-te lá!'],
     followUps: ['I’m fine, thanks.', 'Yes, I’d love to.', 'Saturday morning works for me.', 'See you then!'],
   },
-};
 
+  'en-networking': {
+    lines: ['Hi there! Welcome to the career fair. What’s your name?', 'Nice to meet you. What do you do?', 'That sounds interesting. Which company are you with?', 'Great talking to you. Can I take your email?'],
+    translations: ['Olá! Bem-vindo à feira de emprego. Como te chamas?', 'Prazer em conhecer-te. O que fazes?', 'Interessante. Qual é a tua empresa?', 'Foi bom falar contigo. Posso ficar com o teu email?'],
+    followUps: ['Hi, I’m Ana.', 'I work as a designer.', 'I’m with Lumio Studio.', 'Sure, it’s ana@example.com.'],
+  },
+};
 
 const extraScripts: Record<string, { lines: string[]; translations: string[]; followUps: string[] }> = {
   'es-presentarse': {
@@ -149,6 +154,31 @@ const extraScripts: Record<string, { lines: string[]; translations: string[]; fo
     lines: ['Vamos ver esse ciclo.', 'Quantas vezes o corpo corre?', 'Exato. E o que faz o range?', 'Ótimo. Escreve um for que soma 1 até 10.'],
     translations: ['Vamos ver esse ciclo.', 'Quantas vezes o corpo corre?', 'Exato. E o que faz o range?', 'Ótimo. Escreve um for que soma 1 até 10.'],
     followUps: ['Corre uma vez por elemento.', 'range(3) dá 0, 1, 2.', 'O for repete para cada item.', 'soma = 0\nfor i in range(1, 11):\n    soma += i'],
+  },
+  'es-entrevista': {
+    lines: ['Buenas tardes. Gracias por venir. ¿Puede presentarse?', 'Muy bien. ¿Por qué quiere trabajar aquí?', 'Interesante. ¿Tiene experiencia?', 'Gracias. Le contactaremos muy pronto.'],
+    translations: ['Boa tarde. Obrigada por ter vindo. Pode apresentar-se?', 'Muito bem. Porque quer trabalhar aqui?', 'Interessante. Tem experiência?', 'Obrigada. Contactamo-lo em breve.'],
+    followUps: ['Me llamo Ana y soy de Portugal.', 'Quiero crecer profesionalmente.', 'Trabajé dos años en una tienda.', 'Gracias por su tiempo.'],
+  },
+  'nl-sollicitatie': {
+    lines: ['Goedemiddag. Bedankt dat u er bent. Vertel iets over uzelf.', 'Waarom wilt u hier werken?', 'Welke ervaring heeft u?', 'Bedankt. Wij nemen zeer binnenkort contact op.'],
+    translations: ['Boa tarde. Obrigado por estar presente. Conte-nos algo sobre si.', 'Porque quer trabalhar aqui?', 'Que experiência tem?', 'Obrigado. Entramos em contacto muito em breve.'],
+    followUps: ['Mijn naam is Ana en ik kom uit Portugal.', 'Ik wil graag leren en groeien.', 'Ik heb twee jaar gewerkt bij een winkel.', 'Dank u wel voor uw tijd.'],
+  },
+  'fr-entretien': {
+    lines: ['Bonjour. Merci d’être là. Présentez-vous, s’il vous plaît.', 'Pourquoi voulez-vous travailler ici ?', 'Quelle est votre expérience ?', 'Merci. Nous vous recontacterons très vite.'],
+    translations: ['Bom dia. Obrigada por ter vindo. Apresente-se, por favor.', 'Porque quer trabalhar aqui?', 'Qual é a sua experiência?', 'Obrigado. Entramos em contacto muito em breve.'],
+    followUps: ['Je m’appelle Ana et je viens du Portugal.', 'Je veux apprendre et progresser.', 'J’ai travaillé deux ans dans un magasin.', 'Merci pour votre temps.'],
+  },
+  'de-vorstellungsgespraech': {
+    lines: ['Guten Tag. Danke, dass Sie da sind. Stellen Sie sich kurz vor.', 'Warum möchten Sie hier arbeiten?', 'Welche Erfahrung haben Sie?', 'Danke. Wir melden uns sehr bald bei Ihnen.'],
+    translations: ['Boa tarde. Obrigado por ter vindo. Apresente-se brevemente.', 'Porque quer trabalhar aqui?', 'Que experiência tem?', 'Obrigado. Entramos em contacto muito em breve.'],
+    followUps: ['Ich heiße Ana und komme aus Portugal.', 'Ich möchte hier lernen und wachsen.', 'Ich habe zwei Jahre in einem Laden gearbeitet.', 'Danke für Ihre Zeit.'],
+  },
+  'it-colloquio': {
+    lines: ['Buongiorno. Grazie di essere qui. Si presenti, prego.', 'Perché vuole lavorare qui?', 'Che esperienza ha?', 'Grazie. La ricontatteremo molto presto.'],
+    translations: ['Bom dia. Obrigado por estar presente. Apresente-se, por favor.', 'Porque quer trabalhar aqui?', 'Que experiência tem?', 'Obrigado. Entramos em contacto muito em breve.'],
+    followUps: ['Mi chiamo Ana e vengo dal Portogallo.', 'Voglio imparare e crescere.', 'Ho lavorato due anni in un negozio.', 'Grazie per il suo tempo.'],
   },
 };
 

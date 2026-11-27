@@ -9,18 +9,19 @@ import { deLessons } from './de';
 import { itLessons } from './it';
 import { javascriptLessons } from './javascript';
 import { pythonLessons } from './python';
+import { examPrepLessons } from './examprep';
 import { scenarios as enScenarios } from './scenarios.en';
 import { extraScenarios } from './scenarios.extra';
 
 const packs: Record<LanguageId, Lesson[]> = {
-  en: [...a1Lessons, ...laterLessons],
-  es: esLessons,
-  nl: nlLessons,
-  fr: frLessons,
-  de: deLessons,
-  it: itLessons,
-  javascript: javascriptLessons,
-  python: pythonLessons,
+  en: [...a1Lessons, ...laterLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'en')],
+  es: [...esLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'es')],
+  nl: [...nlLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'nl')],
+  fr: [...frLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'fr')],
+  de: [...deLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'de')],
+  it: [...itLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'it')],
+  javascript: [...javascriptLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'javascript')],
+  python: [...pythonLessons, ...examPrepLessons.filter((lesson) => lesson.languageId === 'python')],
 };
 
 export const lessons: Lesson[] = Object.values(packs).flat();
