@@ -168,3 +168,24 @@ Pedido: mais imagens, animações de acerto/erro, mais vozes para ditar as frase
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Tutor com personagens e conversa por voz — 27 nov 2026 (sexta validação)
+
+## O que foi implementado
+
+- **Personagens de roleplay** (`lib/tutor/characters.ts`): cada cenário do tutor é interpretado por uma personagem original e distinta (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana, Dev Ruiz), com nome, papel na cena, mini-biografia para o modelo remoto e emoji na interface. O botão "Começar com {personagem}" faz a personagem abrir a cena em voz da conversa.
+- **Conversa por voz** no `/tutor` (apenas quando o browser suporta reconhecimento e síntese e a língua tem voz): toggle "Conversa por voz" na barra da conversa; ao parar de falar, a transcrição é enviada automaticamente; a resposta da personagem é lida em voz alta no sotaque/persona de voz escolhida em Definições. Nas mensagens ditadas aparece o rótulo "Ditado por voz · N palavras · a transcrição vem do browser e não mede pronúncia".
+- **Cartão de fluência local** (`lib/tutor/fluency.ts`, "Como está a tua fluência (texto)"): palavras, variedade lexical, muletas (uh/um/…), tamanho médio/máximo das frases — calculado apenas a partir do texto escrito ou ditado, com sugestões e sugestão de dificuldade com um clique. Nunca avalia pronúncia, sotaque, entoação ou tempos verbais de fala.
+- **Tutor remoto em personagem**: o system prompt manda o modelo interpretar a personagem (sem quebrar a quarta parede), responder em no máximo duas frases curtas e, nas correções, incluir apenas dicas de estudo de pronúncia quando aplicável — nunca classificações.
+- **Abertura offline em personagem**: a conversa começa pela fala de abertura da personagem (fluxo "Começar com"); o modo offline compensa o turno para não repetir a abertura.
+- **Honesto por desenho**: sem gravação, sem rede adicional (quando offline), sem métricas inventadas; o painel declara os limites da análise.
+
+## Verificação
+
+- Chromium (via `@sparticuz/chromium` + `playwright-core`) em desktop e mobile (390 px): toggle de voz ativa e legenda de envio automático visíveis, personagem e abertura renderizadas, correção local de gramática aplicada ("I am agree" → "I agree"), painel de fluência com valores reais a partir do texto ditado/escrito, sem erros de página ou de consola, sem overflow horizontal no mobile. Evidência: `validation/tutor-character.png`, `validation/tutor-mobile.png`.
+- Testes novos em `tests/tutor-fluency.test.ts`: fluência (contagem, variedade, muletas, frases), sugestão de dificuldade (subir/consolidar/neutro), cobertura de personagens para todos os pacotes e cenários, abertura por personagem.
+- `npm run typecheck`, `npm run lint`, `npm test` (16 ficheiros, 71 testes) — todos com código 0.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

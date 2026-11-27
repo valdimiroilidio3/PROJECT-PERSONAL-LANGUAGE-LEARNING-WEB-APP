@@ -54,7 +54,8 @@ npm start
 - **Speech service** using the Web Speech API with the selected language's locale: voices, replay, slower playback, optional speech recognition with visible recognized text and a text fallback. No phonetic scoring is claimed; speech controls are hidden for code tracks.
 - **Voice personas and per-language voice selection** in Settings: four speaking styles (automática, Nori energético, Mentor calmo and Expresso) that reshape the system voice, plus a ranked picker of the voices the browser/OS actually exposes per language, with a preview button. Honest empty state when no voice is detected. Fully local; nothing is recorded or transmitted.
 - **Real-life practice** with fifteen scenarios (eight English plus one per additional pack) and keyword-based answer feedback.
-- **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in.
+- **Tutor with role-play characters and voice conversation**: each scenario is a realistic character who stays in scene (Nori, Maya, Tomás, Rui, Sofia, Leo, Dr.ª Campos, Ana and Dev Ruiz). The action bar has a **Conversa por voz** toggle (only when the browser supports speech synthesis and recognition): speak, the message is transcribed and sent when you stop talking, and the character answers out loud in your chosen voice persona. User messages sent by voice are labelled as browser dictation, and the correction/feedback flow is unchanged. A local **fluency panel** ("Como está a tua fluência") works from the text you wrote or dictated only — words, variety, filler words and average sentence length, plus a one-click difficulty suggestion. It never claims to score pronunciation, accent, intonation or speaking times.
+- **Tutor** with offline structured dialogues adapted to the selected pack, three personalities, four difficulty levels, European/Brazilian Portuguese support, in-character dialogue (the AI opens the scene when you press "Começar com {personagem}"), suggested responses, corrections, natural alternatives, session history and summaries. Remote modes are validated, rate-limited and opt-in, and stay in character with short replies and pronunciation study tips (never pronunciation scores).
 - **Gamification and analytics** derived only from saved activity: XP, streaks, achievements, weekly calendar, session history and personal bests.
 - **Six daily missions**: four fixed (first lesson, ten answers, XP goal, three reviews) plus two rotating ones chosen deterministically by the local calendar day from a pool of seven (practice scenario, correct answers, second lesson, study minutes, listening reps, perfect lesson, notebook words) — always measured from today's saved activity.
 - **Personal leagues** (Bronze → Diamante) based only on the learner's own saved XP, with clear thresholds and progress to the next tier.
@@ -125,7 +126,7 @@ lib/scoring.ts       Answer checking and XP rules
 lib/srs.ts           Spaced-repetition scheduling
 lib/db.ts            IndexedDB wrapper with memory fallback
 lib/languages.ts     Language catalogue, locales, labels and metadata
-lib/tutor/           Offline dialogue engine per pack
+lib/tutor/           Offline dialogue engine, role-play characters and local fluency analysis per pack
 tests/               Unit tests
 ```
 

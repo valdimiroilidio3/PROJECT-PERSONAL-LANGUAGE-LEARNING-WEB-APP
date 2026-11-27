@@ -152,6 +152,20 @@ export function findCorrections(text: string): GrammarCorrection[] {
   return corrections;
 }
 
+/** Abertura da personagem — a primeira fala da cena, usada quando o aluno entra pela primeira vez. */
+export function scenarioOpening(
+  scenarioId: string,
+  supportLocale: SupportLocale = 'pt-PT',
+): TutorReply {
+  const script = scripts[scenarioId] ?? extraScripts[scenarioId] ?? scripts.everyday;
+  return {
+    text: script.lines[0],
+    translation: localizePortuguese(script.translations[0], supportLocale),
+    alternatives: [],
+    corrections: [],
+  };
+}
+
 export function offlineReply({ languageId = 'en', scenarioId, personality, difficulty, userText, turn, supportLocale = 'pt-PT' }: OfflineInput): TutorReply {
   const scenario = getScenario(scenarioId, languageId);
   const script = scripts[scenarioId] ?? extraScripts[scenarioId] ?? scripts.everyday;

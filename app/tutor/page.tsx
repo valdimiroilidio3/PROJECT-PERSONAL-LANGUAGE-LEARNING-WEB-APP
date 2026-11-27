@@ -2,14 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, Bot, Check, MessageCircle, Plus, Send, Sparkles } from 'lucide-react';
+import { AlertCircle, Check, MessageCircle, Mic, Play, Plus, Send, Sparkles, Volume2 } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
-import { Mascot } from '@/components/Mascot';
 import { SpeakControl, SpeechInput } from '@/components/Speech';
 import { PageHeader, Tag } from '@/components/ui';
 import { scenariosFor } from '@/lib/content';
 import { levelLabel } from '@/lib/languages';
-import { offlineReply, type Personality, type TutorMode, type TutorReply } from '@/lib/tutor/offline';
+import { offlineReply, scenarioOpening, type Personality, type TutorMode, type TutorReply } from '@/lib/tutor/offline';
+import { characterFor } from '@/lib/tutor/characters';
+import { analyzeFluency, difficultyHint } from '@/lib/tutor/fluency';
+import { speak, speechRecognitionSupported, speechSynthesisSupported } from '@/lib/speech';
 import type { SupportLocale } from '@/lib/tutor/validation';
 import type { LearnerLevel, PracticeScenario, TutorMessage, TutorSession } from '@/lib/types';
 
@@ -28,6 +30,10 @@ const difficulties: { id: LearnerLevel; label: string }[] = [
 
 function newId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+}
+
+function spokenWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
 function summarize(messages: TutorMessage[], scenarioTitle: string): string {
@@ -50,16 +56,53 @@ export default function TutorPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(true);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceMessageIds, setVoiceMessageIds] = useState<string[]>([]);
+  const lastSpokenRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scenario = scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
+  const character = characterFor(scenario.id);
+  const voiceSupported =
+    typeof window !== 'undefined' && speechSynthesisSupported() && speechRecognitionSupported() && language.speech;
+
+  useEffect(() => {
+    try {
+      setVoiceMode(window.localStorage.getItem('lumio.voiceConvo') === '1');
+    } catch {
+      setVoiceMode(false);
+    }
+  }, []);
+
+  const toggleVoiceMode = () => {
+    setVoiceMode((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem('lumio.voiceConvo', next ? '1' : '0');
+      } catch {
+        /* storage bloqueado — vale só para esta visita */
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     setMessages([]);
     setActiveId(null);
     setError(null);
+    setVoiceMessageIds([]);
     setScenarioId(scenarios[0]?.id ?? '');
   }, [profile.targetLanguage, scenarios]);
+
+  // Lê em voz alta cada resposta do tutor enquanto a conversa por voz está ligada.
+  useEffect(() => {
+    if (!voiceMode) return;
+    const lastTutor = [...messages].reverse().find((item) => item.role === 'tutor');
+    if (lastTutor && lastTutor.id !== lastSpokenRef.current) {
+      lastSpokenRef.current = lastTutor.id;
+      void speak(lastTutor.text, { lang: language.locale });
+    }
+  }, [messages, voiceMode, language.locale]);
 
   useEffect(() => {
     void fetch('/api/tutor')
@@ -90,6 +133,9 @@ export default function TutorPage() {
 
   const replyWith = async (text: string, nextMessages: TutorMessage[], chosenMode: TutorMode) => {
     let reply: TutorReply;
+    // Se a sessão começou pela fala de abertura da personagem (mensagens[0] é tutor),
+    // o primeiro turno útil já é a fala seguinte do guião — evita repetir a abertura.
+    const seededOffset = nextMessages[0]?.role === 'tutor' ? 1 : 0;
     if (chosenMode === 'offline') {
       reply = offlineReply({
         languageId: profile.targetLanguage,
@@ -97,7 +143,7 @@ export default function TutorPage() {
         personality,
         difficulty,
         userText: text,
-        turn: nextMessages.filter((item) => item.role === 'user').length - 1,
+        turn: nextMessages.filter((item) => item.role === 'user').length - 1 + seededOffset,
         supportLocale,
       });
     } else {
@@ -147,9 +193,38 @@ export default function TutorPage() {
     });
   };
 
-  const send = async (overrideMode?: TutorMode) => {
-    if (!input.trim() || pending) return;
-    const text = input.trim();
+  const fluencyReport = useMemo(
+    () => analyzeFluency(messages.filter((item) => item.role === 'user').map((item) => item.text)),
+    [messages],
+  );
+  const hint = useMemo(() => difficultyHint(messages), [messages]);
+  const difficultyOrder: LearnerLevel[] = ['beginner', 'elementary', 'intermediate', 'advanced'];
+  const hintedDifficulty = hint
+    ? difficultyOrder[Math.min(difficultyOrder.length - 1, Math.max(0, difficultyOrder.indexOf(difficulty) + (hint === 'up' ? 1 : -1)))]
+    : null;
+
+  const startAsCharacter = () => {
+    if (messages.length > 0) return;
+    const opening = scenarioOpening(scenarioId, supportLocale);
+    const tutorMessage: TutorMessage = {
+      id: newId(),
+      role: 'tutor',
+      text: opening.text,
+      translation: opening.translation,
+      alternatives: [],
+      corrections: [],
+      timestamp: new Date().toISOString(),
+      scenarioId,
+      provider: 'offline',
+    };
+    const next = [tutorMessage];
+    setMessages(next);
+    persist(next);
+  };
+
+  const sendText = async (rawText: string, viaVoice: boolean, overrideMode?: TutorMode) => {
+    const text = rawText.trim();
+    if (!text || pending) return;
     const chosenMode = overrideMode ?? mode;
     const userMessage: TutorMessage = {
       id: newId(),
@@ -159,6 +234,9 @@ export default function TutorPage() {
       scenarioId,
       provider: chosenMode,
     };
+    if (viaVoice) {
+      setVoiceMessageIds((previous) => (previous.includes(userMessage.id) ? previous : [...previous, userMessage.id]));
+    }
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     setInput('');
@@ -172,6 +250,8 @@ export default function TutorPage() {
       setPending(false);
     }
   };
+
+  const send = (overrideMode?: TutorMode) => sendText(input, false, overrideMode);
 
   const retryOffline = async () => {
     const lastUserIndex = messages.map((item) => item.role).lastIndexOf('user');
@@ -200,6 +280,7 @@ export default function TutorPage() {
     setPersonality(session.personality as Personality);
     setDifficulty(session.difficulty);
     setShowSetup(false);
+    setVoiceMessageIds([]);
     setError(null);
   };
 
@@ -208,6 +289,7 @@ export default function TutorPage() {
     setActiveId(null);
     setMessages([]);
     setInput('');
+    setVoiceMessageIds([]);
     setError(null);
     setShowSetup(true);
   };
@@ -215,9 +297,9 @@ export default function TutorPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Conversação guiada"
-        title={`Tutor de ${language.label.toLowerCase()}`}
-        description="Conversa sobre situações reais, recebe sugestões e vê correções em português. Funciona sem API; podes ativar um modelo local se quiseres."
+        eyebrow="Conversa por voz e texto"
+        title={`Tutor de ${language.label.toLowerCase()} com personagens`}
+        description="Fala ou escreve com a personagem da situação — ela responde, segue o teu nível e corrige gramática e vocabulário. Funciona offline; com um modelo local/compatível, as conversas são livres. Sem avaliação fonética — a voz vem da transcrição do browser."
         action={<button type="button" onClick={startNew} className="btn-primary"><Plus size={16} /> Nova conversa</button>}
       />
 
@@ -249,23 +331,40 @@ export default function TutorPage() {
 
         <section className="card flex min-h-[560px] flex-col">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-4">
-            <div className="flex items-center gap-2">
-              <Mascot className="h-11 w-11" mood="wink" />
-              <div>
-                <p className="font-black">{scenario.title}</p>
-                <p className="text-xs text-muted">{personality} · {difficulty} · {mode === 'offline' ? 'sem API' : mode}</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sun-soft text-2xl" aria-hidden>{character.emoji}</span>
+              <div className="min-w-0">
+                <p className="truncate font-black">{character.name} · {scenario.title}</p>
+                <p className="truncate text-xs text-muted">{character.role}</p>
+                <p className="text-[11px] text-muted">{personality} · {difficulty} · {mode === 'offline' ? 'sem API' : mode}</p>
               </div>
             </div>
-            <Tag tone={mode === 'offline' ? 'green' : 'sun'}>{mode === 'offline' ? 'Modo offline' : 'Modelo externo'}</Tag>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleVoiceMode}
+                disabled={!voiceSupported}
+                aria-pressed={voiceMode}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${voiceMode ? 'bg-ink text-white' : 'border border-line bg-white text-muted hover:text-ink'}`}
+                title={voiceSupported ? 'Ligar/desligar conversa por voz' : 'O teu browser não suporta síntese ou reconhecimento de voz'}
+              >
+                {voiceMode ? <Volume2 size={14} /> : <Mic size={14} />} Conversa por voz{voiceMode ? ' · ativa' : ''}
+              </button>
+              <Tag tone={mode === 'offline' ? 'green' : 'sun'}>{mode === 'offline' ? 'Modo offline' : 'Modelo externo'}</Tag>
+            </div>
           </div>
 
           {messages.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-              <Bot size={34} className="text-muted" />
-              <h2 className="mt-3 text-xl font-black">Começa uma conversa</h2>
-              <p className="mt-2 max-w-sm text-sm text-muted">
-                {scenario.description} Escreve em inglês ou usa o microfone. O tutor responde em inglês com apoio em português.
+              <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-sun-soft text-5xl" aria-hidden>{character.emoji}</span>
+              <h2 className="mt-4 text-xl font-black">{character.name}</h2>
+              <p className="mt-1 text-xs font-extrabold uppercase tracking-wider text-muted">{character.role}</p>
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
+                {scenario.description} {voiceMode ? 'Fala ao microfone ou escreve — a personagem responde em voz alta.' : `Escreve em ${language.label.toLowerCase()} ou liga a conversa por voz — a personagem responde com apoio em português.`}
               </p>
+              <button type="button" onClick={startAsCharacter} className="btn-primary mt-6">
+                <Play size={16} /> Começar com {character.name}
+              </button>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 {scenario.hints.slice(0, 3).map((hint) => (
                   <button key={hint} type="button" onClick={() => setInput(hint)} className="rounded-full border border-line bg-cream px-3 py-2 text-xs font-bold hover:border-ink/30">{hint}</button>
@@ -301,9 +400,45 @@ export default function TutorPage() {
                         </ul>
                       </div>
                     )}
+                    {message.role === 'user' && voiceMessageIds.includes(message.id) && (
+                      <p className="mt-2 flex items-center gap-1 border-t border-ink/10 pt-2 text-[10px] leading-snug text-ink/70">
+                        <Mic size={10} /> Ditado por voz · {spokenWords(message.text)} palavras · a transcrição vem do browser e não mede pronúncia
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               ))}
+              {messages.filter((item) => item.role === 'user').length >= 2 && (
+                <details className="rounded-2xl border border-line bg-white p-4 text-xs">
+                  <summary className="cursor-pointer text-xs font-black">Como está a tua fluência (texto)</summary>
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-xl bg-cream p-2 text-center"><p className="text-base font-black">{fluencyReport.words}</p><p className="text-[10px] font-bold text-muted">palavras</p></div>
+                    <div className="rounded-xl bg-cream p-2 text-center"><p className="text-base font-black">{Math.round(fluencyReport.uniqueRatio * 100)}%</p><p className="text-[10px] font-bold text-muted">variedade</p></div>
+                    <div className="rounded-xl bg-cream p-2 text-center"><p className="text-base font-black">{fluencyReport.fillers}</p><p className="text-[10px] font-bold text-muted">muletas</p></div>
+                    <div className="rounded-xl bg-cream p-2 text-center"><p className="text-base font-black">{fluencyReport.avgSentenceLength}</p><p className="text-[10px] font-bold text-muted">palavras/frase</p></div>
+                  </div>
+                  {fluencyReport.suggestions.length > 0 && (
+                    <ul className="mt-3 list-inside list-disc space-y-1 leading-relaxed text-muted">
+                      {fluencyReport.suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}
+                    </ul>
+                  )}
+                  {hint && hintedDifficulty && hintedDifficulty !== difficulty && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-sun-soft p-2">
+                      <p className="min-w-0 flex-1 font-bold">
+                        {hint === 'up'
+                          ? 'Sem correções registadas e frases sólidas — podes subir de dificuldade.'
+                          : 'Várias correções — consolida este nível antes de subir.'}
+                      </p>
+                      <button type="button" className="btn-ghost !px-3 !py-1 text-[11px]" onClick={() => setDifficulty(hintedDifficulty)}>
+                        {hint === 'up' ? `Subir para ${difficulties.find((item) => item.id === hintedDifficulty)?.label ?? hintedDifficulty}` : `Consolidar em ${difficulties.find((item) => item.id === hintedDifficulty)?.label ?? hintedDifficulty}`}
+                      </button>
+                    </div>
+                  )}
+                  <p className="mt-3 text-[10px] leading-relaxed text-muted">
+                    Análise do texto que escreveste ou dictaste — palavras, variedade, muletas e tamanho das frases. Não avalia pronúncia, sotaque, entoação nem tempos verbais de fala.
+                  </p>
+                </details>
+              )}
               {pending && <p className="text-center text-xs font-bold text-muted">O tutor está a pensar…</p>}
               <div ref={bottomRef} />
             </div>
@@ -317,7 +452,14 @@ export default function TutorPage() {
                 ))}
               </div>
             )}
-            <SpeechInput value={input} onChange={setInput} placeholder="Escreve a tua resposta em inglês…" minRows={2} />
+            <SpeechInput
+              value={input}
+              onChange={setInput}
+              placeholder={voiceMode ? 'Diz a tua resposta…' : `Escreve a tua resposta em ${language.label.toLowerCase()}…`}
+              minRows={2}
+              autoSendOnFinal={voiceMode}
+              onSend={(text) => void sendText(text, true)}
+            />
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="text-[11px] text-muted">Feedback de aprendizagem, não avaliação fonética oficial.</p>
               <button type="button" onClick={() => void send()} disabled={!input.trim() || pending} className="btn-primary !px-5">

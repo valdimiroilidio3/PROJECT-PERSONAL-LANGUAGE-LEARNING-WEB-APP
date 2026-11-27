@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, Volume2 } from 'lucide-react';
 import { speak, speechRecognitionSupported, speechSynthesisSupported, startRecognition } from '@/lib/speech';
 import { useApp } from './AppContext';
@@ -55,33 +55,51 @@ export function SpeechInput({
   onChange,
   placeholder = 'Escreva a sua resposta…',
   minRows = 2,
+  autoSendOnFinal = false,
+  onSend,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   minRows?: number;
+  /** Envia automaticamente a mensagem quando a fala terminar (modo conversa por voz). */
+  autoSendOnFinal?: boolean;
+  onSend?: (text: string) => void;
 }) {
   const { language } = useApp();
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [stopRecognition, setStopRecognition] = useState<(() => void) | null>(null);
+  const latestValue = useRef(value);
+  const failedRef = useRef(false);
+
+  useEffect(() => {
+    latestValue.current = value;
+  }, [value]);
 
   useEffect(() => setSupported(speechRecognitionSupported() && language.speech), [language.speech]);
 
   const toggle = () => {
     if (listening) {
       stopRecognition?.();
-      setListening(false);
       return;
     }
     setMessage(null);
+    failedRef.current = false;
     const stop = startRecognition({
       onText: (text) => onChange(text),
-      onError: (error) => setMessage(error),
+      onError: (error) => {
+        failedRef.current = true;
+        setMessage(error);
+      },
       onEnd: () => {
         setListening(false);
         setStopRecognition(null);
+        const finalText = latestValue.current.trim();
+        if (autoSendOnFinal && !failedRef.current && onSend && finalText) {
+          onSend(finalText);
+        }
       },
     }, language.locale);
     if (!stop) {
@@ -119,6 +137,9 @@ export function SpeechInput({
         <p className="mt-2 text-xs text-muted">
           Texto reconhecido para confirmação: <span className="font-semibold text-ink">{value}</span>
         </p>
+      )}
+      {autoSendOnFinal && supported && !message && (
+        <p className="mt-2 text-xs text-muted">Modo conversa: a mensagem é enviada quando parares de falar. Toca no microfone para começar/parar.</p>
       )}
       {message && <p className="mt-2 text-xs text-danger">{message}</p>}
       {!supported && (
