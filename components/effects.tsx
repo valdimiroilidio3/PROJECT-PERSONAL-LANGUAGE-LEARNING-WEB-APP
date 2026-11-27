@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { animate, motion, useReducedMotion } from 'framer-motion';
 
 const CONFETTI_COLORS = ['#FFE500', '#3FA66B', '#E46B5A', '#8FBFE8', '#C9B8E8', '#20201D'];
@@ -115,4 +115,47 @@ export function popIn(delay = 0) {
     animate: { scale: 1, opacity: 1, rotate: 0 },
     transition: { type: 'spring' as const, stiffness: 320, damping: 16, delay },
   };
+}
+
+const staggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
+};
+
+/** Entrada suave em cascata para listas e grelhas — respeita prefers-reduced-motion. */
+export function Stagger({ className = '', children }: { className?: string; children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return <div className={className}>{children}</div>;
+  return (
+    <motion.div initial="hidden" animate="show" variants={staggerContainer} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
+/** Filho de {@link Stagger} que entra com fade + deslize. */
+export function StaggerItem({ className = '', children }: { className?: string; children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return <div className={className}>{children}</div>;
+  return (
+    <motion.div variants={staggerItem} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
+/** Envolve uma secção para entrar com fade + deslize — respeita prefers-reduced-motion. */
+export function FadeUp({ delay = 0, className = '', children }: { delay?: number; className?: string; children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return <div className={className}>{children}</div>;
+  return (
+    <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay, ease: 'easeOut' }} className={className}>
+      {children}
+    </motion.div>
+  );
 }

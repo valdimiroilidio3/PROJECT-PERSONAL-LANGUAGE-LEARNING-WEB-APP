@@ -106,6 +106,7 @@ export default function VocabularyPage() {
           description={vocabulary.length === 0 ? 'Conclui uma lição para importar o vocabulário automaticamente ou adiciona uma palavra manualmente.' : 'Experimenta outro termo ou muda o filtro.'}
           href={vocabulary.length === 0 ? '/learn' : undefined}
           linkLabel={vocabulary.length === 0 ? 'Ver lições' : undefined}
+          illustration={vocabulary.length === 0 ? { src: '/images/nori-review.jpg', alt: 'Nori num canto de leitura, a segurar cartões de vocabulário no ar' } : undefined}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">

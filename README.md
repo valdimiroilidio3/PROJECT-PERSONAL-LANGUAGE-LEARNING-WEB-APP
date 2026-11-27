@@ -37,7 +37,7 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 60 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking) |
+| `npm test` | Runs 75 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life) |
 
 ## What is included
 
@@ -65,7 +65,8 @@ npm start
 - **Habit garden**: 28 calendar days with real saved activity only. Empty days are never penalised and never reduce XP, league or achievements.
 - **Motion feedback**: confetti burst on correct answers, a short card shake plus the lost heart pop on mistakes, bouncing mascot and counted-up XP/accuracy/minutes on the summary screen, animated skill bars and a pulsing streak flame — all respecting `prefers-reduced-motion`.
 - **Adaptive next step** on the dashboard with explicit rules for overdue reviews, repeated mistakes, weak categories and the next unlocked lesson.
-- **Original illustrations** (Nori's journey for onboarding and OpenGraph, the league podium and the habit garden) were commissioned for Lumio and live in `public/images/`. The mascot remains an inline SVG; no borrowed characters or assets.
+- **Original illustrations** (Nori's journey for onboarding and OpenGraph, the league podium, the habit garden, Nori at the café counter for practice, Nori at his reading nook for review/empty states and Nori on the summit for progress) were commissioned for Lumio and live in `public/images/`. The mascot remains an inline SVG; no borrowed characters or assets.
+- **Motion feedback**: confetti on correct answers and lesson/practice/review completions, counted-up XP, staggered entrances on grids (practice scenarios), fade-up section entrances, shimmer on progress bars and spring-pop achievement badges — all respecting `prefers-reduced-motion`. Illustrated empty states (review, vocabulary) keep no-data screens friendly instead of blank.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.
 
@@ -119,7 +120,7 @@ Notes:
 ```text
 app/                 App Router pages and the server-side tutor API
 components/          Shared UI, AppContext, lesson player, speech controls, mascot, celebration effects (confetti, count-up)
-public/images/       Original Nori illustrations used by onboarding, league, garden and OpenGraph
+public/images/       Original Nori illustrations used by onboarding, league, garden, practice, review, vocabulary and progress
 lib/content/         Validated lesson packs and practice scenarios for all eight tracks
 lib/analytics.ts     Metrics derived from saved events
 lib/scoring.ts       Answer checking and XP rules

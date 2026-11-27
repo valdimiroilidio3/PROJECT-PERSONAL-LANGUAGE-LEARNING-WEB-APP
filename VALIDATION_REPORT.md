@@ -189,3 +189,24 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Vida visual, segunda ronda — 27 nov 2026 (sétima validação)
+
+## O que foi implementado
+
+- **Três novas ilustrações originais** no mesmo estilo de aquarela: `nori-practice.jpg` (Nori atrás do balcão de um café, para a seleção de situações de prática), `nori-review.jpg` (Nori num canto de leitura a jogar com cartões de vocabulário, para o estado vazio da revisão e do caderno e para o fim da sessão de revisão) e `nori-progress.jpg` (Nori no cimo de um monte com bandeira de estrela, no cabeçalho do Progresso).
+- **Entra em cena** (`components/effects.tsx`): `Stagger`/`StaggerItem` (entrada em cascata da grelha de situações), `FadeUp` (secções) e componentes que devolvem `<div>` simples quando `prefers-reduced-motion` está ativo.
+- **EmptyState com ilustração opcional** (`components/ui.tsx`): estado vazio da revisão e do caderno mostram a ilustração; sem ilustração o comportamento anterior mantém-se.
+- **ProgressBar com brilho** (`app/globals.css` + `ui.tsx`): brilho em onda via `::after`, desativado com `prefers-reduced-motion`.
+- **Celebrações**: confetti no ecrã de resultado da prática e no fim da sessão de revisão, check-circle da prática com pop elástico, XP ganho na prática com CountUp, conquistas conquistadas no Progresso com pop elástico escalonado.
+- Testes novos: `tests/life-visual.test.tsx` (ilustração no EmptyState, cascata/FadeUp, papel progressbar).
+
+## Verificação
+
+- Chromium (via `@sparticuz/chromium` + `playwright-core`): hero de prática visível e sem overflow em desktop e 390 px, estados vazios com ilustração, Progresso com ilustração (escondida no mobile por desenho), 0 erros de página/consola. Evidência: `validation/practice-hero.png`, `validation/review-empty.png`, `validation/vocabulary-empty.png`, `validation/progress-life.png`, `validation/life-mobile.png`.
+- `npm run typecheck`, `npm run lint`, `npm test` (17 ficheiros, 75 testes) e `npm run build` (12 rotas) — todos com código 0.
+- Nota: o servidor de desenvolvimento ("Lumio app") foi reiniciado — o `.next/` tinha sido substituído pelo `npm run build` com o dev server ligado.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

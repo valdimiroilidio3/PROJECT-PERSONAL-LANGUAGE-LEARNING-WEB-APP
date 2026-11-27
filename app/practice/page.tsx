@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle2, Eye, Lightbulb, RotateCcw, Trophy, X } from 'lucide-react';
 import { useApp } from '@/components/AppContext';
 import { SpeechInput, SpeakControl } from '@/components/Speech';
+import { Confetti, CountUp, FadeUp, popIn, Stagger, StaggerItem } from '@/components/effects';
 import { PageHeader, ProgressBar, Tag } from '@/components/ui';
 import { scenariosFor } from '@/lib/content';
 import { levelLabel } from '@/lib/languages';
@@ -103,9 +105,25 @@ export default function PracticePage() {
           title={`Praticar ${language.label.toLowerCase()}`}
           description="Escolhe uma situação da vida real, escreve ou diz a tua resposta e compara com um modelo natural."
         />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <FadeUp className="relative mb-6 overflow-hidden rounded-4xl border border-line shadow-card">
+          <Image
+            src="/images/nori-practice.jpg"
+            alt="Nori atrás do balcão de um café, de braços abertos, pronto para interpretar a cena"
+            width={1376}
+            height={768}
+            priority
+            className="h-44 w-full object-cover object-[50%_38%] sm:h-56"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink/75 via-ink/30 to-transparent" aria-hidden />
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-center p-5 sm:p-7">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-sun">Cenas da vida real</p>
+            <p className="mt-1 max-w-[260px] text-lg font-black leading-snug text-white sm:max-w-xs sm:text-2xl">O Nori interpreta quem está do outro lado da cena.</p>
+          </div>
+        </FadeUp>
+        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {scenarios.map((item) => (
-            <button key={item.id} type="button" onClick={() => select(item.id)} className="card flex flex-col items-start text-left transition hover:-translate-y-0.5 hover:border-ink/30">
+            <StaggerItem key={item.id} className="h-full">
+            <button type="button" onClick={() => select(item.id)} className="card flex h-full w-full flex-col items-start text-left transition hover:-translate-y-0.5 hover:border-ink/30">
               <div className="flex w-full items-start justify-between gap-2">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sun-soft"><Trophy size={19} /></span>
                 <Tag>{levelLabel(item.languageId, item.level)}</Tag>
@@ -114,8 +132,9 @@ export default function PracticePage() {
               <p className="mt-1 flex-1 text-sm text-muted">{item.description}</p>
               <p className="mt-4 text-xs font-extrabold">{item.prompts.length} respostas · {item.category}</p>
             </button>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
         <p className="mt-6 text-xs text-muted">
           As respostas são comparadas com ideias-chave e com um modelo. Não é uma avaliação fonética nem um teste oficial de nível.
         </p>
@@ -128,11 +147,12 @@ export default function PracticePage() {
       <button type="button" onClick={() => setScenarioId(null)} className="mb-5 inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-ink"><ArrowLeft size={15} /> Todas as situações</button>
 
       {finished ? (
-        <div className="card text-center">
+        <div className="card relative overflow-hidden text-center">
+          <Confetti mode="rain" count={44} />
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success"><CheckCircle2 size={32} /></div>
+            <motion.div {...popIn(0.1)} className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success"><CheckCircle2 size={32} /></motion.div>
             <h1 className="mt-4 text-2xl font-black">Situação concluída</h1>
-            <p className="mt-2 text-sm text-muted">Ganhaste {earnedXp} XP com base nas tuas respostas.</p>
+            <p className="mt-2 text-sm text-muted">Ganhaste <CountUp value={earnedXp} /> XP com base nas tuas respostas.</p>
             <div className="mt-6 space-y-3 text-left">
               {results.map((result, index) => (
                 <div key={index} className="rounded-2xl border border-line p-4">
