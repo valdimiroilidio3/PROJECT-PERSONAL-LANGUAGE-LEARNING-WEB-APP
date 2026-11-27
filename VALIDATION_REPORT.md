@@ -276,3 +276,23 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 Ainda não publicado em produção — aguarda integração em `main` e deploy.
+
+# Simulados A2 para inglês e espanhol — 27 nov 2026 (décima primeira validação)
+
+## O que foi implementado
+
+- **Dois simulados A2 originais** — `en-a2` e `es-a2` em `lib/exams.ts` — com **15 questões de escolha múltipla** (leitura 6 com passagem partilhada sobre planos de fim de semana, audição 5 com voz do sistema, vocabulário 4 de registo de exame), **15 minutos** e aprovação indicativa a partir de 60%. XP mantém a regra: 1 por acerto + 10 de bónus por aprovação (tudo certo = 25 XP).
+- **`/exames` com seletor de nível A1/A2** (tabs "A1 · Base" / "A2 · Elementar") visível apenas para inglês e espanhol; os restantes pacotes naturais mantêm só o A1 e os pacotes de código mantêm o estado vazio honesto. `examsFor()` devolve os simulados por língua; `examFor(languageId, level)` continua a devolver o A1 por omissão.
+- Perguntas originais baseadas no percurso A2 (planos e fim de semana, pedidos em lojas e transportes, registo formal) — não são exames oficiais e não certificam nada; o resultado é declarado indicativo.
+- Testes: `tests/exams.test.ts` alargado — formato dos A2 (15/15 min/60%, secções 6-5-4), `examsFor` por pacote, patamar de 60% no A2 (9/15 aprova), 25 XP com tudo certo. **19 ficheiros, 91 testes.**
+- README atualizado (simulados A1+A2, 91 testes).
+
+## Verificação
+
+- `npm run typecheck`, `npm run lint`, `npm test` (19 ficheiros, 91 testes) e `npm run build` (13 rotas, `/exames` estático, 15.7 kB) — todos com código 0.
+- Dev server reiniciado após o build; todas as rotas respondem HTTP 200.
+- Nota honesta: o e2e em Chromium headless continua indisponível neste sandbox; a interação completa (seletor de nível, cronómetro, áudio, entrega automática) deve ser repetida no browser.
+
+## Publicação
+
+Ainda não publicado em produção — aguarda integração em `main` e deploy.

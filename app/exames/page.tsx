@@ -16,7 +16,7 @@ import {
 import { useApp } from '@/components/AppContext';
 import { Confetti, CountUp } from '@/components/effects';
 import { EmptyState, PageHeader, ProgressBar, Tag } from '@/components/ui';
-import { examFor, parseExamScore, scoreExam, type ExamQuestion, type ExamScore, type ExamSection } from '@/lib/exams';
+import { examsFor, parseExamScore, scoreExam, type ExamQuestion, type ExamScore, type ExamSection } from '@/lib/exams';
 import { speak, speechSynthesisSupported } from '@/lib/speech';
 
 const SECTION_LABELS: Record<ExamSection, string> = {
@@ -35,7 +35,9 @@ function formatClock(totalSeconds: number): string {
 
 export default function ExamesPage() {
   const { profile, language, attempts, recordAttempt } = useApp();
-  const exam = examFor(profile.targetLanguage);
+  const exams = useMemo(() => examsFor(profile.targetLanguage), [profile.targetLanguage]);
+  const [selectedLevel, setSelectedLevel] = useState<'A1' | 'A2'>('A1');
+  const exam = exams.find((item) => item.level === selectedLevel) ?? exams[0];
   const [phase, setPhase] = useState<'intro' | 'running' | 'done'>('intro');
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [remaining, setRemaining] = useState(0);
@@ -124,7 +126,7 @@ export default function ExamesPage() {
         />
         <EmptyState
           title="Ainda sem simulado para programação"
-          description="Os pacotes de JavaScript e Python praticam com exercícios e projetos guiados — não com exame de proficiência. Os simulados A1 existem para inglês, espanhol, neerlandês, francês, alemão e italiano."
+          description="Os pacotes de JavaScript e Python praticam com exercícios e projetos guiados — não com exame de proficiência. Os simulados existem para inglês, espanhol (A1 e A2) e para neerlandês, francês, alemão e italiano (A1)."
           href="/learn"
           linkLabel="Ir para as lições"
         />
@@ -143,6 +145,25 @@ export default function ExamesPage() {
           title="Simulados"
           description="Um simulado completo no formato dos exames de proficiência — com tempo, nota por secção e resultado imediato."
         />
+        {exams.length > 1 && (
+          <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Nível do simulado">
+            {exams.map((item) => {
+              const active = exam?.id === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setSelectedLevel(item.level)}
+                  className={`rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${active ? 'border-ink bg-sun text-ink' : 'border-line bg-white text-muted hover:text-ink'}`}
+                >
+                  {language.levels[item.level] ?? item.level}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="card">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>

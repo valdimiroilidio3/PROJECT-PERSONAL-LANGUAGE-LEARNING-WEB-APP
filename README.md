@@ -37,7 +37,7 @@ npm start
 | `npm start` | Serves the production build |
 | `npm run typecheck` | Strict TypeScript check with no emit |
 | `npm run lint` | ESLint over `app`, `components`, `lib` and `tests` |
-| `npm test` | Runs 89 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue, sample exams) |
+| `npm test` | Runs 91 unit/integration tests (scoring, XP, analytics, SRS, backup, IndexedDB, full lesson flow, language packs, progress isolation, gamification, weekly and monthly routines, voice ranking, tutor fluency and characters, visual life, content catalogue, sample exams) |
 
 ## What is included
 
@@ -68,7 +68,7 @@ npm start
 - **Original illustrations** (Nori's journey for onboarding and OpenGraph, the league podium, the habit garden, Nori at the café counter for practice, Nori at his reading nook for review/empty states, Nori on the summit for progress, Nori on the path for learn and Nori at the chalkboard for lesson intros) were commissioned for Lumio and live in `public/images/`. The mascot remains an inline SVG; no borrowed characters or assets.
 - **Motion feedback**: confetti on correct answers and lesson/practice/review completions, counted-up XP, staggered entrances on grids (practice scenarios), fade-up section entrances, shimmer on progress bars and spring-pop achievement badges — all respecting `prefers-reduced-motion`. Illustrated empty states (review, vocabulary) keep no-data screens friendly instead of blank.
 - **Backup**: export/import validated JSON and reset with explicit confirmation.
-- **Sample exams (“Simulados”)**: one original A1 mock exam per natural language (English, Spanish, Dutch, French, German, Italian) at `/exames` — 10 multiple-choice questions across reading (shared passage), listening (system voice, replayable) and vocabulary, a 10-minute strict timer with automatic submission, per-section scoring, an indicative pass mark of 60%, XP (1 per correct answer + 10 pass bonus) and confetti on approval. Every question is original, not taken from any official exam; results are indicative only and never certify anything. Attempts are stored as regular practice attempts. Programming packs get an honest empty state instead of a fake exam.
+- **Sample exams (“Simulados”)**: original mock exams at `/exames` — A1 for English, Spanish, Dutch, French, German and Italian (10 questions, 10 minutes), plus A2 for English and Spanish (15 questions, 15 minutes, reading 6 / listening 5 / vocabulary 4). Reading questions share a passage, listening uses the system voice (replayable) and vocabulary checks exam-register terms; strict timer with automatic submission, per-section scoring, indicative pass mark of 60%, XP (1 per correct answer + 10 pass bonus) and confetti on approval. Every question is original, not taken from any official exam; results are indicative only and never certify anything. Attempts are stored as regular practice attempts. En/ES learners get an A1–A2 level picker; programming packs get an honest empty state instead of a fake exam.
 - **Responsive UI**: desktop sidebar and mobile bottom navigation, accessible focus states, reduced-motion support, loading/empty/error states.
 
 ## Routes
@@ -83,7 +83,7 @@ npm start
 | `/tutor` | Offline-first AI conversation interface |
 | `/vocabulary` | Personal word notebook |
 | `/review` | Spaced-repetition flashcards |
-| `/exames` | Sample A1 exams with timer, per-section scoring and indicative results |
+| `/exames` | Sample A1 (all natural packs) and A2 (English, Spanish) exams with timer, per-section scoring and indicative results |
 | `/progress` | Analytics and achievements |
 | `/settings` | Preferences, data management and browser information |
 
@@ -124,7 +124,7 @@ app/                 App Router pages and the server-side tutor API
 components/          Shared UI, AppContext, lesson player, speech controls, mascot, celebration effects (confetti, count-up)
 public/images/       Original Nori illustrations used by onboarding, league, garden, practice, review, vocabulary and progress
 lib/content/         Validated lesson packs and practice scenarios for all eight tracks
-lib/exams.ts         Original sample exams (reading, listening, vocabulary) and scoring
+lib/exams.ts         Original sample A1/A2 exams (reading, listening, vocabulary) and scoring
 lib/analytics.ts     Metrics derived from saved events
 lib/scoring.ts       Answer checking and XP rules
 lib/srs.ts           Spaced-repetition scheduling
