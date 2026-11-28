@@ -137,7 +137,7 @@ export default function ReviewPage() {
           {current ? (
             <div className="mx-auto max-w-2xl">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex-1"><ProgressBar value={reviewed} max={reviewed + activeQueue.length} /></div>
+                <div className="flex-1"><ProgressBar value={reviewed} max={reviewed + activeQueue.length} label="Progresso da sessão de revisão" /></div>
                 <span className="text-xs font-bold text-muted">{activeQueue.length} restantes</span>
               </div>
               <motion.div key={current.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card min-h-[360px]">

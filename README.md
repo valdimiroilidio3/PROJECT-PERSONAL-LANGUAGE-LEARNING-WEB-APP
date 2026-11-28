@@ -151,6 +151,10 @@ Fonts use the local system/Inter stack (no Google Fonts request), the mascot is 
 
 See `DESIGN_SYSTEM.md` for the documented colour, typography, spacing, radius, elevation, motion and component tokens used by the existing Tailwind setup.
 
+## Accessibility
+
+Keyboard and screen-reader support is built in: a skip link to the main content, labelled progress bars, landmark navigation (`nav`/`main`) with `aria-current` on the active item, semantic `fieldset`/`legend` question groups in the exam runner, `aria-pressed` toggles/filters, a labelled countdown timer, focus moved to the exam heading when a run starts, visible focus outlines, and `prefers-reduced-motion` respected by all animation (including the confetti). Decorative icons and illustrations are hidden from assistive technology.
+
 ## Design notes
 
 The visual system uses yellow `#FFE500`, warm cream `#F7F5EF`, dark ink `#20201D`, soft green success states and warm red errors with Inter/system typography, rounded cards and restrained Framer Motion transitions. The mascot, name, illustrations and layouts are original to this project and are not copies of any reference app.
