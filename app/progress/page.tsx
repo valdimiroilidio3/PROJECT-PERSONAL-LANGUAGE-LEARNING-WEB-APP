@@ -55,7 +55,7 @@ export default function ProgressPage() {
               {analytics.week.map((day) => (
                 <div key={day.key} className="flex items-center gap-3">
                   <span className="w-12 text-xs font-bold capitalize text-muted">{new Date(day.key).toLocaleDateString('pt-PT', { weekday: 'short' })}</span>
-                  <div className="flex-1"><ProgressBar value={day.xp} max={maxXp} /></div>
+                  <div className="flex-1"><ProgressBar value={day.xp} max={maxXp} label={`XP registado em ${new Date(day.key).toLocaleDateString('pt-PT')}`} /></div>
                   <span className="w-14 text-right text-xs font-extrabold">{day.xp} XP</span>
                   <span className="w-12 text-right text-[11px] text-muted">{day.minutes}m</span>
                 </div>
@@ -80,7 +80,7 @@ export default function ProgressPage() {
                     <span className="font-bold">{category.category}</span>
                     <span className="text-xs text-muted">{category.accuracy}% · {category.total} respostas</span>
                   </div>
-                  <ProgressBar value={category.correct} max={category.total} color={category.accuracy >= 80 ? 'bg-success' : category.accuracy >= 50 ? 'bg-sun' : 'bg-danger'} />
+                  <ProgressBar value={category.correct} max={category.total} color={category.accuracy >= 80 ? 'bg-success' : category.accuracy >= 50 ? 'bg-sun' : 'bg-danger'} label={`Acertos em ${category.category}`} />
                 </div>
               ))}
               <p className="border-t border-line pt-3 text-xs text-muted">
@@ -161,7 +161,7 @@ export default function ProgressPage() {
                       )}
                     </p>
                   </div>
-                  <div className="mt-2"><ProgressBar value={stats.bestCorrect} max={stats.total} color={stats.passed ? 'bg-success' : 'bg-sun'} /></div>
+                  <div className="mt-2"><ProgressBar value={stats.bestCorrect} max={stats.total} color={stats.passed ? 'bg-success' : 'bg-sun'} label={`Melhor resultado do Simulado ${stats.level}`} /></div>
 
                   {history.length > 0 && (
                     <div className="mt-4">

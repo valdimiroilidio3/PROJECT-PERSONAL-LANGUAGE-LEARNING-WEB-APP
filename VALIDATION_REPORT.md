@@ -334,3 +334,19 @@ Ainda não publicado em produção — aguarda integração em `main` e deploy.
 ## Publicação
 
 `main` publica automaticamente no Vercel a cada merge (confirmado nas últimas rondas).
+
+# Passada de acessibilidade — 27 nov 2026 (décima quarta validação)
+
+## O que foi feito
+
+- **Skip link** “Saltar para o conteúdo principal” (visível apenas em foco) e `<main id="conteudo-principal" tabIndex={-1}>`.
+- **`ProgressBar`** aceita `label` — todas as barras (progresso, revisão, categorias, simulados, secções de exame, atividade semanal) têm nome acessível e `aria-valuetext`.
+- **Runner de exame**: cada questão é um `<fieldset>` com `<legend>` (grupo de rádio válido); secções com `aria-labelledby`; seletor de nível usa `role="group"` + `aria-pressed`; foco movido para o título da prova ao iniciar; botão de áudio desativado com explicação; temporizador mantém `role="timer"`.
+- **Ícones decorativos** ignorados por leitores de ecrã (StatTile, badges).
+- **Ícones e toggles** já usavam `aria-label`/`aria-pressed` em revisão, vocabulário, definições e navegação (inferior e lateral) — confirmado, sem alterações.
+- README com secção “Accessibility”.
+
+## Verificação
+
+- typecheck, lint, testes (19 ficheiros, 93) e build (13 rotas) OK; rotas principais HTTP 200.
+- Nota honesta: o e2e com leitor de ecrã real não foi executado neste sandbox; confirmar com NVDA/VoiceOver no preview.

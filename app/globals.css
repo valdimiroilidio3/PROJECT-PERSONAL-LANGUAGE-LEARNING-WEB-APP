@@ -37,6 +37,24 @@ body {
   color: #20201d;
 }
 
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 60;
+  border-radius: 9999px;
+  background: #20201d;
+  color: #ffffff;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  transition: top 0.2s ease;
+}
+.skip-link:focus-visible {
+  top: 0.75rem;
+  outline-color: #ffe500;
+}
+
 @layer components {
   .progress-fill {
     position: relative;

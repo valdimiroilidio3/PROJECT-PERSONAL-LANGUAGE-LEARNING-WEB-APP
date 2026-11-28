@@ -44,6 +44,7 @@ export default function ExamesPage() {
   const [score, setScore] = useState<ExamScore | null>(null);
   const startedAt = useRef(Date.now());
   const submittedRef = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
 
   const best = useMemo(() => {
@@ -105,6 +106,10 @@ export default function ExamesPage() {
     if (phase === 'running' && remaining === 0) void submit();
   }, [phase, remaining, submit]);
 
+  useEffect(() => {
+    if (phase === 'running') headingRef.current?.focus();
+  }, [phase]);
+
   const start = () => {
     if (!exam) return;
     setAnswers({});
@@ -146,15 +151,14 @@ export default function ExamesPage() {
           description="Um simulado completo no formato dos exames de proficiência — com tempo, nota por secção e resultado imediato."
         />
         {exams.length > 1 && (
-          <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Nível do simulado">
+          <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Nível do simulado">
             {exams.map((item) => {
               const active = exam?.id === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  role="tab"
-                  aria-selected={active}
+                  aria-pressed={active}
                   onClick={() => setSelectedLevel(item.level)}
                   className={`rounded-2xl border px-4 py-2 text-xs font-extrabold transition ${active ? 'border-ink bg-sun text-ink' : 'border-line bg-white text-muted hover:text-ink'}`}
                 >
@@ -220,7 +224,7 @@ export default function ExamesPage() {
                   <span className="font-bold">{SECTION_LABELS[key]}</span>
                   <span className="text-xs text-muted">{score.perSection[key].correct}/{score.perSection[key].total} · {score.perSection[key].percent}%</span>
                 </div>
-                <ProgressBar value={score.perSection[key].correct} max={score.perSection[key].total} color={score.perSection[key].percent >= 80 ? 'bg-success' : score.perSection[key].percent >= 50 ? 'bg-sun' : 'bg-danger'} />
+                <ProgressBar value={score.perSection[key].correct} max={score.perSection[key].total} color={score.perSection[key].percent >= 80 ? 'bg-success' : score.perSection[key].percent >= 50 ? 'bg-sun' : 'bg-danger'} label={`Secção ${SECTION_LABELS[key]}`} />
               </div>
             ))}
           </div>
@@ -251,24 +255,25 @@ export default function ExamesPage() {
           <p className="text-xs font-extrabold text-muted">{answeredCount}/{exam.questions.length} respondidas</p>
           <button type="button" onClick={() => void submit()} className="btn-primary !px-4 !py-2 text-xs">Entregar <CheckCircle2 size={13} /></button>
         </div>
-        <div className="mx-auto mt-2 max-w-3xl"><ProgressBar value={answeredCount} max={exam.questions.length} /></div>
+        <div className="mx-auto mt-2 max-w-3xl"><ProgressBar value={answeredCount} max={exam.questions.length} label="Questões respondidas" /></div>
       </div>
 
-      <h1 className="text-2xl font-black">{exam.title}</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-black outline-none">{exam.title}</h1>
       <p className="mt-1 text-xs text-muted">Sem dicionário nem tradução durante a prova. Lê com atenção — cada resposta vale 1 ponto.</p>
 
       {SECTION_ORDER.map((section) => {
         const questions = exam.questions.filter((question) => question.section === section);
         return (
-          <section key={section} className="mt-6">
-            <h2 className="text-xs font-extrabold uppercase tracking-[0.16em] text-muted">{SECTION_LABELS[section]}</h2>
-            <fieldset className="mt-3 space-y-4">
+          <section key={section} className="mt-6" aria-labelledby={`secao-${section}`}>
+            <h2 id={`secao-${section}`} className="text-xs font-extrabold uppercase tracking-[0.16em] text-muted">{SECTION_LABELS[section]}</h2>
+            <div className="mt-3 space-y-4">
               {questions.map((question) => {
                 const questionPassage = passage(question);
                 const showPassage = questionPassage && questionPassage !== previousPassage;
                 if (questionPassage) previousPassage = questionPassage;
                 return (
-                  <div key={question.id} className="card">
+                  <fieldset key={question.id} className="card">
+                    <legend className="mb-1 w-full text-sm font-extrabold">{question.question}</legend>
                     {showPassage && (
                       <blockquote className="mb-4 whitespace-pre-line rounded-2xl bg-cream p-4 text-sm italic leading-relaxed text-ink/90">{questionPassage}</blockquote>
                     )}
@@ -278,13 +283,14 @@ export default function ExamesPage() {
                           type="button"
                           onClick={() => void speak(question.audioText ?? '', { lang: language.locale })}
                           disabled={!speechSynthesisSupported() || !language.speech}
+                          title={!speechSynthesisSupported() || !language.speech ? 'Áudio não disponível neste browser ou pacote' : 'Ouvir o áudio da questão'}
+                          aria-label="Ouvir o áudio da questão"
                           className="btn-ghost !px-4 !py-2 text-xs"
                         >
                           <Volume2 size={14} /> Ouvir o áudio
                         </button>
                       </div>
                     )}
-                    <legend className="text-sm font-extrabold">{question.question}</legend>
                     <div className="mt-3 grid gap-2">
                       {question.options.map((option, index) => (
                         <label
@@ -303,10 +309,10 @@ export default function ExamesPage() {
                         </label>
                       ))}
                     </div>
-                  </div>
+                  </fieldset>
                 );
               })}
-            </fieldset>
+            </div>
           </section>
         );
       })}

@@ -48,6 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen lg:pl-64">
+      <a href="#conteudo-principal" className="skip-link">Saltar para o conteúdo principal</a>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white px-5 py-7 lg:flex">
         <Link href="/" className="mb-9 flex items-center gap-3 rounded-2xl px-2">
           <Mascot className="h-12 w-12" mood="wink" />
@@ -147,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link href="/onboarding" className="btn-primary !py-2">Configurar agora</Link>
             </div>
           )}
-          <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6 lg:pb-12 lg:pt-10">{children}</main>
+          <main id="conteudo-principal" tabIndex={-1} className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 outline-none sm:px-6 lg:pb-12 lg:pt-10">{children}</main>
         </>
       )}
 

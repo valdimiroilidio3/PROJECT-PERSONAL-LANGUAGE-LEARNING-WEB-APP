@@ -42,7 +42,7 @@ export function StatTile({ label, value, hint, icon }: { label: string; value: R
     <div className="h-full rounded-3xl border border-line bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-extrabold uppercase tracking-wider text-muted">{label}</p>
-        {icon}
+        {icon && <span aria-hidden>{icon}</span>}
       </div>
       <p className="mt-2 text-2xl font-black tracking-tight">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
@@ -50,10 +50,10 @@ export function StatTile({ label, value, hint, icon }: { label: string; value: R
   );
 }
 
-export function ProgressBar({ value, max, color = 'bg-sun' }: { value: number; max: number; color?: string }) {
+export function ProgressBar({ value, max, color = 'bg-sun', label = 'Progresso' }: { value: number; max: number; color?: string; label?: string }) {
   const percent = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
-    <div className="h-2.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
+    <div className="h-2.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} aria-valuetext={`${value} de ${max}`}>
       <div
         className={`progress-fill h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${percent}%` }}
